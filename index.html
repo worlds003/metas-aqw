@@ -190,46 +190,60 @@
                 const response = await fetch('data/dados.json');
                 const data = await response.json();
                 
-                const itemsList = Array.isArray(data) ? data : (data.metas || data.items || Object.values(data));
-
-                if (!Array.isArray(itemsList)) {
-                    console.error("O formato do dados.json precisa ser um array.", data);
-                    return;
+                let entries = [];
+                if (Array.isArray(data)) {
+                    entries = data.map(item => [item.id || item.nome || item.name, item]);
+                } else if (data && typeof data === 'object') {
+                    // Suporta JSON estruturado com chaves de ID ou aninhado
+                    const rootData = data.metas || data.items || data;
+                    entries = Object.entries(rootData);
                 }
 
-                itemsList.forEach(item => {
-                    if (!item || item.id === undefined || !item.nome || !item.passos) return;
+                entries.forEach(([key, item]) => {
+                    if (!item) return;
                     
-                    const stringId = String(item.id).toLowerCase();
+                    const rawId = String(item.id || key).toLowerCase();
+                    const nome = item.nome || item.name || rawId;
+                    const passos = item.passos || item.steps || item.passos_requisitos || [];
+
+                    if (!passos || !Array.isArray(passos)) return;
 
                     const converted = {
-                        title: item.nome,
-                        subtasks: item.passos.map((passo, pIdx) => ({
+                        title: nome,
+                        subtasks: passos.map((passo, pIdx) => ({
                             id: Date.now() + pIdx,
-                            title: `${passo.titulo} — ${passo.descricao}`,
-                            items: passo.requisitos.map((req, rIdx) => ({
+                            title: `${passo.titulo || passo.title || 'Passo'} — ${passo.descricao || passo.description || ''}`,
+                            items: (passo.requisitos || passo.requirements || []).map((req, rIdx) => ({
                                 id: Date.now() + (pIdx * 10) + rIdx + 100,
-                                title: req.nome,
+                                title: req.nome || req.name || 'Item',
                                 hasQuantity: true,
-                                currentQty: req.quantidadeAtual || 0,
-                                totalQty: req.quantidadeTotal || 1,
-                                isDaily: false,
+                                currentQty: req.quantidadeAtual || req.currentQty || 0,
+                                totalQty: req.quantidadeTotal || req.totalQty || 1,
+                                isDaily: req.isDaily || false,
                                 completed: false
                             }))
                         }))
                     };
 
-                    aqwDatabase[stringId] = converted;
-                    aqwDatabase[item.nome.toLowerCase()] = converted;
+                    aqwDatabase[rawId] = converted;
+                    aqwDatabase[nome.toLowerCase()] = converted;
 
-                    // Mapeamento de Atalhos/Aliases para os botões rápidos
-                    if (stringId === 'void-highlord') aqwDatabase['vhl'] = converted;
-                    if (stringId === 'lord-of-order') aqwDatabase['loo'] = converted;
-                    if (stringId === 'valiance') aqwDatabase['valiance'] = converted;
-                    if (stringId === 'legion-doomknight') aqwDatabase['ldk'] = converted;
-                    if (stringId === 'nsod') aqwDatabase['nsod'] = converted;
-                    if (stringId === 'verus-doomknight') aqwDatabase['vdk'] = converted;
+                    // Mapeamento Inteligente de Atalhos/Aliases para os botões rápidos
+                    if (rawId.includes('void') || rawId === 'vhl' || nome.toLowerCase().includes('void highlord')) {
+                        aqwDatabase['vhl'] = converted;
+                        aqwDatabase['void-highlord'] = converted;
+                    }
+                    if (rawId.includes('order') || rawId === 'loo' || nome.toLowerCase().includes('lord of order')) {
+                        aqwDatabase['loo'] = converted;
+                        aqwDatabase['lord-of-order'] = converted;
+                    }
+                    if (rawId.includes('valiance') || rawId === 'valiance') aqwDatabase['valiance'] = converted;
+                    if (rawId.includes('doomknight') || rawId === 'ldk') aqwDatabase['ldk'] = converted;
+                    if (rawId.includes('nsod') || rawId === 'nsod') aqwDatabase['nsod'] = converted;
+                    if (rawId.includes('verus') || rawId === 'vdk') aqwDatabase['vdk'] = converted;
                 });
+
+                console.log("Banco de dados AQW carregado com sucesso:", aqwDatabase);
             } catch (err) {
                 console.error("Erro ao carregar o arquivo dados.json:", err);
             }
