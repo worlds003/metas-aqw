@@ -198,8 +198,10 @@
                 }
 
                 itemsList.forEach(item => {
-                    if (!item || !item.id || !item.nome || !item.passos) return;
+                    if (!item || item.id === undefined || !item.nome || !item.passos) return;
                     
+                    const stringId = String(item.id).toLowerCase();
+
                     const converted = {
                         title: item.nome,
                         subtasks: item.passos.map((passo, pIdx) => ({
@@ -217,16 +219,16 @@
                         }))
                     };
 
-                    aqwDatabase[item.id.toLowerCase()] = converted;
+                    aqwDatabase[stringId] = converted;
                     aqwDatabase[item.nome.toLowerCase()] = converted;
 
                     // Mapeamento de Atalhos/Aliases para os botões rápidos
-                    if (item.id === 'void-highlord') aqwDatabase['vhl'] = converted;
-                    if (item.id === 'lord-of-order') aqwDatabase['loo'] = converted;
-                    if (item.id === 'valiance') aqwDatabase['valiance'] = converted;
-                    if (item.id === 'legion-doomknight') aqwDatabase['ldk'] = converted;
-                    if (item.id === 'nsod') aqwDatabase['nsod'] = converted;
-                    if (item.id === 'verus-doomknight') aqwDatabase['vdk'] = converted;
+                    if (stringId === 'void-highlord') aqwDatabase['vhl'] = converted;
+                    if (stringId === 'lord-of-order') aqwDatabase['loo'] = converted;
+                    if (stringId === 'valiance') aqwDatabase['valiance'] = converted;
+                    if (stringId === 'legion-doomknight') aqwDatabase['ldk'] = converted;
+                    if (stringId === 'nsod') aqwDatabase['nsod'] = converted;
+                    if (stringId === 'verus-doomknight') aqwDatabase['vdk'] = converted;
                 });
             } catch (err) {
                 console.error("Erro ao carregar o arquivo dados.json:", err);
