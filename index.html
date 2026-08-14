@@ -15,6 +15,7 @@
       --text-muted: #94a3b8;
       --border: #334155;
       --daily-bg: #d97706;
+      --danger: #ef4444;
     }
 
     * {
@@ -30,6 +31,7 @@
       padding: 20px;
       display: flex;
       justify-content: center;
+      min-height: 100vh;
     }
 
     .container {
@@ -52,13 +54,14 @@
       color: var(--text-muted);
     }
 
-    /* Seção de Presets */
+    /* Painel de Presets */
     .presets-container {
       background-color: var(--card-bg);
       padding: 20px;
       border-radius: 12px;
       border: 1px solid var(--border);
       margin-bottom: 30px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     .presets-container h2 {
@@ -101,6 +104,7 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 20px;
+      position: relative;
     }
 
     .meta-header {
@@ -113,6 +117,16 @@
     .meta-header h3 {
       font-size: 1.4rem;
       color: #38bdf8;
+    }
+
+    .btn-excluir {
+      background: transparent;
+      border: none;
+      color: var(--danger);
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px 8px;
     }
 
     .meta-desc {
@@ -158,6 +172,11 @@
     .requisito-main label {
       cursor: pointer;
       flex-grow: 1;
+    }
+
+    .requisito-main label.concluido {
+      text-decoration: line-through;
+      color: var(--text-muted);
     }
 
     .qtd {
@@ -209,6 +228,14 @@
       border-radius: 4px;
       font-family: monospace;
     }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 40px;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+    }
   </style>
 </head>
 <body>
@@ -234,7 +261,6 @@
     const PRESETS_DATABASE = {
       "Void Highlord (VHL)": {
         dificuldade: "Hardcore",
-        isDaily: true,
         descricao: "Uma das classes solo mais poderosas do jogo. Requer itens raros do Nulgath.",
         requisitos: [
           {
@@ -273,7 +299,6 @@
       },
       "Lord of Order (LoO)": {
         dificuldade: "Média",
-        isDaily: true,
         descricao: "Classe de suporte essencial para todas as Ultras do jogo.",
         requisitos: [
           {
@@ -288,7 +313,6 @@
       },
       "Verus DoomKnight": {
         dificuldade: "Hardcore",
-        isDaily: true,
         descricao: "Classe end-game focada em debuff e dano físico elevado.",
         requisitos: [
           {
@@ -303,7 +327,6 @@
       },
       "Forge - Valiance": {
         dificuldade: "Hardcore",
-        isDaily: false,
         descricao: "Aprimoramento de arma essencial para maximizar os atributos.",
         requisitos: [
           {
@@ -318,7 +341,6 @@
       },
       "Legion DoomKnight": {
         dificuldade: "Fácil",
-        isDaily: false,
         descricao: "Excelente classe solo para quem faz parte da Dage's Legion.",
         requisitos: [
           {
@@ -333,7 +355,6 @@
       },
       "NSoD (Necrotic Sword of Doom)": {
         dificuldade: "Extrema",
-        isDaily: true,
         descricao: "Arma com +51% de dano em todos os monstros do jogo.",
         requisitos: [
           {
@@ -348,7 +369,12 @@
       }
     };
 
-    let metasAtivas = [];
+    let metasAtivas = JSON.parse(localStorage.getItem('metasAQW')) || [];
+
+    // Salvar no navegador
+    function salvar() {
+      localStorage.setItem('metasAQW', JSON.stringify(metasAtivas));
+    }
 
     // Renderiza os botões de Presets na tela
     function carregarBotoesPresets() {
@@ -382,6 +408,24 @@
       };
 
       metasAtivas.push(novaMeta);
+      salvar();
+      renderizarMetas();
+    }
+
+    // Marcar item como concluído
+    function toggleRequisito(metaId, reqIdx) {
+      const meta = metasAtivas.find(m => m.id === metaId);
+      if (meta && meta.requisitos[reqIdx]) {
+        meta.requisitos[reqIdx].concluido = !meta.requisitos[reqIdx].concluido;
+        salvar();
+        renderizarMetas();
+      }
+    }
+
+    // Excluir Meta
+    function excluirMeta(metaId) {
+      metasAtivas = metasAtivas.filter(m => m.id !== metaId);
+      salvar();
       renderizarMetas();
     }
 
@@ -398,12 +442,20 @@
       const container = document.getElementById('metas-container');
       container.innerHTML = '';
 
+      if (metasAtivas.length === 0) {
+        container.innerHTML = `<div class="empty-state">Nenhuma meta ativa no momento. Escolha um Preset acima para começar!</div>`;
+        return;
+      }
+
       metasAtivas.forEach(meta => {
         const cardHTML = `
           <div class="meta-card">
             <div class="meta-header">
               <h3>${meta.titulo}</h3>
-              <span class="badge badge-${meta.dificuldade.toLowerCase()}">${meta.dificuldade}</span>
+              <div>
+                <span class="badge badge-${meta.dificuldade.toLowerCase()}">${meta.dificuldade}</span>
+                <button class="btn-excluir" onclick="excluirMeta(${meta.id})" title="Excluir meta">✕</button>
+              </div>
             </div>
             <p class="meta-desc">${meta.descricao}</p>
             
@@ -411,8 +463,8 @@
               ${meta.requisitos.map((req, idx) => `
                 <div class="requisito-item">
                   <div class="requisito-main">
-                    <input type="checkbox" id="req-${meta.id}-${idx}">
-                    <label for="req-${meta.id}-${idx}">
+                    <input type="checkbox" id="req-${meta.id}-${idx}" ${req.concluido ? 'checked' : ''} onchange="toggleRequisito(${meta.id}, ${idx})">
+                    <label for="req-${meta.id}-${idx}" class="${req.concluido ? 'concluido' : ''}">
                       <strong>${req.nome}</strong> 
                       <span class="qtd">(${req.qtdAtual}/${req.qtdNecessaria})</span>
                       ${req.daily ? '<span class="badge-daily">DAILY</span>' : ''}
@@ -438,6 +490,7 @@
 
     // Inicialização
     carregarBotoesPresets();
+    renderizarMetas();
   </script>
 </body>
 </html>
