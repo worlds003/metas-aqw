@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarefas Compartilhadas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-6 font-sans">
+
+  <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+      📋 Tarefas da Equipe
+    </h1>
+
+    <!-- Form Tarefa Principal -->
+    <div class="flex gap-2 mb-6">
+      <input type="text" id="parentInput" placeholder="Nova tarefa principal..." class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button onclick="addParentTask()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">Adicionar</button>
+    </div>
+
+    <!-- Lista de Tarefas -->
+    <div id="tasksList" class="space-y-4"></div>
+  </div>
+
+  <script>
+    // Configuração do Supabase
+    const SUPABASE_URL = 'https://kxhqbwstlhvbmjpgayyq.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_J6K1ZU0pXpCrWQGtp4Owng_ZkhqqHlP';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadTasks() {
+      const { data: tasks, error } = await supabaseClient
+        .from('tasks')
+        .select('*, subtasks(*)')
+        .order('created_at', { ascending: true });
+
+      if (error) return console.error('Erro ao carregar tarefas:', error);
+      renderTasks(tasks || []);
+    }
+
+    function renderTasks(tasks) {
+      const container = document.getElementById('tasksList');
+      container.innerHTML = '';
+
+      tasks.forEach((task) => {
+        const subtasks = task.subtasks || [];
+        const totalSub = subtasks.length;
+        const completedSub = subtasks.filter(s => s.completed).length;
+        const progress = totalSub > 0 ? Math.round((completedSub / totalSub) * 100) : 0;
+
+        // Ordena as subtarefas por data de criação
+        subtasks.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        const card = document.createElement('div');
+        card.className = "border rounded-lg p-4 bg-gray-50 shadow-sm";
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-semibold text-lg text-gray-800">${task.title}</h3>
+            <span class="text-sm font-bold text-blue-600">${progress}%</span>
+          </div>
+
+          <!-- Barra de Progresso -->
+          <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+            <div class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+          </div>
+
+          <!-- Lista de Subtarefas -->
+          <div class="pl-2 space-y-2 mb-4">
+            ${subtasks.map((sub) => `
+              <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-100 p-1 rounded">
+                <input type="checkbox" ${sub.completed ? 'checked' : ''} onchange="toggleSubtask('${sub.id}', ${sub.completed})" class="w-4 h-4 text-blue-600 rounded">
+                <span class="${sub.completed ? 'line-through text-gray-400' : 'text-gray-700'}">${sub.title}</span>
+              </label>
+            `).join('')}
+          </div>
+
+          <!-- Input de Nova Subtarefa -->
+          <div class="flex gap-2">
+            <input type="text" id="subInput-${task.id}" placeholder="Nova subtarefa..." class="text-sm border rounded px-3 py-1.5 flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <button onclick="addSubtask('${task.id}')" class="bg-gray-200 text-gray-700 text-sm px-3 py-1.5 rounded font-medium hover:bg-gray-300 transition">+ Subtarefa</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function addParentTask() {
+      const input = document.getElementById('parentInput');
+      if (!input.value.trim()) return;
+
+      await supabaseClient.from('tasks').insert([{ title: input.value.trim() }]);
+      input.value = '';
+      loadTasks();
+    }
+
+    async function addSubtask(taskId) {
+      const input = document.getElementById(`subInput-${taskId}`);
+      if (!input.value.trim()) return;
+
+      await supabaseClient.from('subtasks').insert([{ task_id: taskId, title: input.value.trim() }]);
+      input.value = '';
+      loadTasks();
+    }
+
+    async function toggleSubtask(subtaskId, currentStatus) {
+      await supabaseClient.from('subtasks').update({ completed: !currentStatus }).eq('id', subtaskId);
+      loadTasks();
+    }
+
+    // Carrega as tarefas inicialmente e escuta mudanças em tempo real
+    loadTasks();
+    supabaseClient
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => loadTasks())
+      .subscribe();
+  </script>
+</body>
+</html>
