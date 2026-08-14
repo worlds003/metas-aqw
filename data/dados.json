@@ -17,38 +17,6 @@
             "lugar": "tercessuinotlim",
             "npc": "Archfiend Larvae",
             "quest": "Swindle Bilbo's Stuff"
-          },
-          { 
-            "nome": "Diamond of Nulgath", 
-            "quantidadeAtual": 0, 
-            "quantidadeTotal": 200,
-            "lugar": "tercessuinotlim",
-            "npc": "Diamond Operation",
-            "quest": "Diamond Operation"
-          },
-          { 
-            "nome": "Gem of Nulgath", 
-            "quantidadeAtual": 0, 
-            "quantidadeTotal": 500,
-            "lugar": "tercessuinotlim",
-            "npc": "Polish Pet",
-            "quest": "The Assistant"
-          }
-          // (continue com os outros itens do passo 1...)
-        ]
-      },
-      {
-        "numero": 2,
-        "titulo": "Passo 2: Void Crystal B",
-        "descricao": "Coleta dos materiais e itens do set para o segundo cristal.",
-        "requisitos": [
-          { 
-            "nome": "Blood Plate", 
-            "quantidadeAtual": 0, 
-            "quantidadeTotal": 1,
-            "lugar": "underworld",
-            "npc": "Undead Legion Shop",
-            "quest": "Drop de Monstro"
           }
         ]
       },
@@ -64,7 +32,25 @@
             "isDaily": true,
             "lugar": "tercessuinotlim",
             "npc": "Void Staff",
-            "quest": "Nulgath (Orr)"
+            "quest": "Nulgath (Orr)",
+            "requisitos": [
+              {
+                "nome": "Unidentified 13",
+                "quantidadeAtual": 0,
+                "quantidadeTotal": 1,
+                "lugar": "tercessuinotlim",
+                "npc": "Archfiend Larvae",
+                "quest": "Swindle Bilbo's Stuff"
+              },
+              {
+                "nome": "Gem of Nulgath",
+                "quantidadeAtual": 0,
+                "quantidadeTotal": 1,
+                "lugar": "tercessuinotlim",
+                "npc": "Polish Pet",
+                "quest": "The Assistant"
+              }
+            ]
           }
         ]
       }
