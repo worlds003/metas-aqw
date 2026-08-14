@@ -190,7 +190,16 @@
                 const response = await fetch('dados.json');
                 const data = await response.json();
                 
-                data.forEach(item => {
+                const itemsList = Array.isArray(data) ? data : (data.metas || data.items || Object.values(data));
+
+                if (!Array.isArray(itemsList)) {
+                    console.error("O formato do dados.json precisa ser um array.", data);
+                    return;
+                }
+
+                itemsList.forEach(item => {
+                    if (!item || !item.id || !item.nome || !item.passos) return;
+                    
                     const converted = {
                         title: item.nome,
                         subtasks: item.passos.map((passo, pIdx) => ({
@@ -200,8 +209,8 @@
                                 id: Date.now() + (pIdx * 10) + rIdx + 100,
                                 title: req.nome,
                                 hasQuantity: true,
-                                currentQty: req.quantidadeAtual,
-                                totalQty: req.quantidadeTotal,
+                                currentQty: req.quantidadeAtual || 0,
+                                totalQty: req.quantidadeTotal || 1,
                                 isDaily: false,
                                 completed: false
                             }))
