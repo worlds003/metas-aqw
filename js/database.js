@@ -1,182 +1,209 @@
-export const PRESETS = {
-    vhl: {
-        title: "Void Highlord (VHL)",
-        steps: [
-            {
-                title: "Passo 1: Roentgenium of Nulgath (15 Diárias)",
-                requirements: [
-                    { 
-                        name: "Roentgenium of Nulgath", 
-                        current: 0, 
-                        max: 15, 
-                        isDaily: true,
-                        subRequirements: [
-                            { name: "Unidentified 13", current: 0, max: 1, isDaily: false },
-                            { name: "Blood Gem of the Archfiend", current: 0, max: 2, isDaily: false },
-                            { name: "Diamond of Nulgath", current: 0, max: 30, isDaily: false },
-                            { name: "Dark Crystal Shard", current: 0, max: 30, isDaily: false },
-                            { name: "Tainted Gem", current: 0, max: 30, isDaily: false },
-                            { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                title: "Passo 2: Totem of Nulgath (15 Totens)",
-                requirements: [
-                    { 
-                        name: "Totem of Nulgath", 
-                        current: 0, 
-                        max: 15, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Unidentified 13", current: 0, max: 3, isDaily: false },
-                            { name: "Essence of Nulgath", current: 0, max: 100, isDaily: false },
-                            { name: "Gem of Nulgath", current: 0, max: 15, isDaily: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                title: "Passo 3: Void Crystals A e B",
-                requirements: [
-                    { 
-                        name: "Void Crystal A", 
-                        current: 0, 
-                        max: 1, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Blood Gem of the Archfiend", current: 0, max: 3, isDaily: false },
-                            { name: "Diamond of Nulgath", current: 0, max: 50, isDaily: false },
-                            { name: "Dark Crystal Shard", current: 0, max: 50, isDaily: false },
-                            { name: "Tainted Gem", current: 0, max: 50, isDaily: false },
-                            { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
-                        ]
-                    },
-                    { 
-                        name: "Void Crystal B", 
-                        current: 0, 
-                        max: 1, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Blood Gem of the Archfiend", current: 0, max: 3, isDaily: false },
-                            { name: "Diamond of Nulgath", current: 0, max: 50, isDaily: false },
-                            { name: "Dark Crystal Shard", current: 0, max: 50, isDaily: false },
-                            { name: "Tainted Gem", current: 0, max: 50, isDaily: false },
-                            { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
-                        ]
-                    }
-                ]
-            }
+[
+  {
+    "id": "void-highlord",
+    "nome": "Void Highlord",
+    "categoria": "Classes",
+    "wiki": "http://aqwwiki.wikidot.com/void-highlord-class",
+    "passos": [
+      {
+        "numero": 1,
+        "titulo": "Passo 1: Void Crystal A",
+        "descricao": "Coleta dos materiais pesados para a criação do primeiro cristal.",
+        "requisitos": [
+          { 
+            "nome": "Blood Gem of the Archfiend", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 100,
+            "lugar": "sevencircleswar",
+            "npc": "Archfiend",
+            "quest": "Kiss the Void",
+            "requisitos": [
+              { "nome": "Unidentified 10", "quantidadeAtual": 0, "quantidadeTotal": 30, "lugar": "tercessuinotlim", "npc": "Archfiend Larvae", "quest": "Swindle Bilbo's Stuff" }
+            ]
+          },
+          { 
+            "nome": "Diamond of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 200,
+            "lugar": "tercessuinotlim",
+            "npc": "Diamond Operation",
+            "quest": "Diamond Operation",
+            "requisitos": [
+              { "nome": "Essence of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 10, "lugar": "tercessuinotlim", "npc": "Larvae", "quest": "Diamond Operation" }
+            ]
+          },
+          { 
+            "nome": "Gem of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 500,
+            "lugar": "tercessuinotlim",
+            "npc": "Polish Pet",
+            "quest": "The Assistant",
+            "requisitos": [
+              { "nome": "Tainted Gem", "quantidadeAtual": 0, "quantidadeTotal": 1, "lugar": "tercessuinotlim", "npc": "Archfiend Larvae", "quest": "Swindle Bilbo's Stuff" }
+            ]
+          },
+          { 
+            "nome": "Tainted Gem", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 500,
+            "lugar": "tercessuinotlim",
+            "npc": "Archfiend Larvae",
+            "quest": "Swindle Bilbo's Stuff",
+            "requisitos": [
+              { "nome": "Dark Crystal Shard", "quantidadeAtual": 0, "quantidadeTotal": 1, "lugar": "tercessuinotlim", "npc": "Archfiend Larvae", "quest": "Swindle Bilbo's Stuff" }
+            ]
+          },
+          { 
+            "nome": "Dark Crystal Shard", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 500,
+            "lugar": "tercessuinotlim",
+            "npc": "Archfiend Larvae",
+            "quest": "Swindle Bilbo's Stuff"
+          },
+          { 
+            "nome": "Voucher of Nulgath (non-mem)", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 20,
+            "lugar": "tercessuinotlim",
+            "npc": "Archfiend Larvae",
+            "quest": "Swindle Bilbo's Stuff"
+          },
+          { 
+            "nome": "Totem of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 15,
+            "lugar": "tercessuinotlim",
+            "npc": "Terrarium",
+            "quest": "The Hard Core Metal",
+            "requisitos": [
+              { "nome": "Lump of Coal", "quantidadeAtual": 0, "quantidadeTotal": 1, "lugar": "aqwespania", "npc": "Coal", "quest": "Drop" }
+            ]
+          },
+          { 
+            "nome": "Relic of Chaos", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 1,
+            "lugar": "mountdoomskull",
+            "npc": "Chacon",
+            "quest": "Chaos Lord"
+          },
+          { 
+            "nome": "The Nation's Spikes", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 1,
+            "lugar": "fiendzone",
+            "npc": "Nulgath",
+            "quest": "The Nation's Spikes"
+          }
         ]
-    },
-    archmage: {
-        title: "ArchMage",
-        steps: [
-            {
-                title: "Passo 1: Acesso Inicial e Tokens",
-                requirements: [
-                    { 
-                        name: "Arcana Staff", 
-                        current: 0, 
-                        max: 1, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Eternia Dust", current: 0, max: 100, isDaily: false },
-                            { name: "Mana Energy", current: 0, max: 50, isDaily: false }
-                        ]
-                    },
-                    { name: "Eternia Mind Token", current: 0, max: 100, isDaily: true },
-                    { 
-                        name: "Spark of Life", 
-                        current: 0, 
-                        max: 75, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Life Essence", current: 0, max: 150, isDaily: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                title: "Passo 2: Materiais Avançados",
-                requirements: [
-                    { name: "Resonance", current: 0, max: 300, isDaily: false },
-                    { name: "Life Energy", current: 0, max: 150, isDaily: false },
-                    { name: "Transcendence", current: 0, max: 100, isDaily: false }
-                ]
-            }
+      },
+      {
+        "numero": 2,
+        "titulo": "Passo 2: Void Crystal B",
+        "descricao": "Coleta dos materiais e itens do set para o segundo cristal.",
+        "requisitos": [
+          { 
+            "nome": "Blood Gem of the Archfiend", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 100,
+            "lugar": "sevencircleswar",
+            "npc": "Archfiend",
+            "quest": "Kiss the Void"
+          },
+          { 
+            "nome": "Diamond of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 200,
+            "lugar": "tercessuinotlim",
+            "npc": "Diamond Operation",
+            "quest": "Diamond Operation"
+          },
+          { 
+            "nome": "Gem of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 500,
+            "lugar": "tercessuinotlim",
+            "npc": "Polish Pet",
+            "quest": "The Assistant"
+          },
+          { 
+            "nome": "Tainted Gem", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 500,
+            "lugar": "tercessuinotlim",
+            "npc": "Archfiend Larvae",
+            "quest": "Swindle Bilbo's Stuff"
+          },
+          { 
+            "nome": "Dark Crystal Shard", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 500,
+            "lugar": "tercessuinotlim",
+            "npc": "Archfiend Larvae",
+            "quest": "Swindle Bilbo's Stuff"
+          },
+          { 
+            "nome": "Voucher of Nulgath (non-mem)", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 20,
+            "lugar": "tercessuinotlim",
+            "npc": "Archfiend Larvae",
+            "quest": "Swindle Bilbo's Stuff"
+          },
+          { 
+            "nome": "Totem of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 15,
+            "lugar": "tercessuinotlim",
+            "npc": "Terrarium",
+            "quest": "The Hard Core Metal"
+          },
+          { 
+            "nome": "Blood Plate", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 1,
+            "lugar": "maul",
+            "npc": "Blood Titan",
+            "quest": "Drop de Monstro"
+          }
         ]
-    },
-    nsod: {
-        title: "Necrotic Sword of Doom (NSoD)",
-        steps: [
-            {
-                title: "Passo 1: Acesso e Void Skulls",
-                requirements: [
-                    { 
-                        name: "Void Skulls", 
-                        current: 0, 
-                        max: 25000, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Corrupted Skull", current: 0, max: 800, isDaily: false }
-                        ]
-                    },
-                    { name: "Doom Aura", current: 0, max: 100, isDaily: false }
-                ]
-            },
-            {
-                title: "Passo 2: Minérios e Auras de Doom",
-                requirements: [
-                    { name: "Dark Energy", current: 0, max: 5000, isDaily: false },
-                    { name: "Barium", current: 0, max: 30, isDaily: true }
-                ]
-            }
+      },
+      {
+        "numero": 3,
+        "titulo": "Passo 3: Roentgenium of Nulgath (Diárias)",
+        "descricao": "Farm diário necessário para acumular os 15 Roentgeniums.",
+        "requisitos": [
+          { 
+            "nome": "Roentgenium of Nulgath", 
+            "quantidadeAtual": 0, 
+            "quantidadeTotal": 15, 
+            "isDaily": true,
+            "lugar": "tercessuinotlim",
+            "npc": "Void Staff",
+            "quest": "Nulgath (Orr)",
+            "requisitos": [
+              {
+                "nome": "Unidentified 13",
+                "quantidadeAtual": 0,
+                "quantidadeTotal": 1,
+                "lugar": "tercessuinotlim",
+                "npc": "Archfiend Larvae",
+                "quest": "Swindle Bilbo's Stuff"
+              },
+              {
+                "nome": "Gem of Nulgath",
+                "quantidadeAtual": 0,
+                "quantidadeTotal": 1,
+                "lugar": "tercessuinotlim",
+                "npc": "Polish Pet",
+                "quest": "The Assistant"
+              }
+            ]
+          }
         ]
-    },
-    exalted: {
-        title: "Exalted Apotheosis",
-        steps: [
-            {
-                title: "Passo 1: Insígnias Ultra Bosses",
-                requirements: [
-                    { name: "Ultra Engineer Insignia", current: 0, max: 12, isDaily: true },
-                    { name: "Ultra Warden Insignia", current: 0, max: 12, isDaily: true },
-                    { name: "Ultra Tyndarius Insignia", current: 0, max: 12, isDaily: true }
-                ]
-            },
-            {
-                title: "Passo 2: Crafting Final",
-                requirements: [
-                    { name: "Exalted Crown", current: 0, max: 1, isDaily: false },
-                    { name: "Apotheosis Blade", current: 0, max: 1, isDaily: false }
-                ]
-            }
-        ]
-    },
-    loo: {
-        title: "Lord of Order (LoO)",
-        steps: [
-            {
-                title: "Passo Único: Missões Diárias",
-                requirements: [
-                    { name: "Destiny Token", current: 0, max: 10, isDaily: true }
-                ]
-            }
-        ]
-    },
-    valiance: {
-        title: "Valiance (Enchantment)",
-        steps: [
-            {
-                title: "Passo 1: Insígnias e Materiais",
-                requirements: [
-                    { name: "Ultra Tyndarius Insignia", current: 0, max: 10, isDaily: true },
-                    { name: "Ultra Dage Insignia", current: 0, max: 10, isDaily: true },
-                    { name: "Ultra Nulgath Insignia", current: 0, max: 10, isDaily: true }
-                ]
-            }
-        ]
-    }
-};
+      }
+    ]
+  }
+]
