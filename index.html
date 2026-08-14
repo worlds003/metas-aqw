@@ -81,7 +81,7 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO SEU PROJETO FIREBASE (JÁ INTEGRADA!) ---
+        // --- CONFIGURAÇÃO DO SEU PROJETO FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyC5JO0TndQiMREXKEMzXE3h3UuunRaVPPg",
             authDomain: "metas-aqw.firebaseapp.com",
@@ -107,19 +107,17 @@
             const emailDisplay = document.getElementById('user-email-display');
 
             if (user) {
-                // Usuário está logado
                 currentUser = user;
                 authContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
                 emailDisplay.innerText = `Conectado como: ${user.email}`;
-                await loadUserTasks(); // Carrega as tarefas da nuvem
+                await loadUserTasks();
             } else {
-                // Usuário está deslogado
                 currentUser = null;
                 authContainer.classList.remove('hidden');
                 appContainer.classList.add('hidden');
                 tasks = [];
-                document.getElementById('tasks-container').innerHTML = ''; // Limpa a tela
+                document.getElementById('tasks-container').innerHTML = '';
             }
         });
 
@@ -159,7 +157,6 @@
 
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
-                // O onAuthStateChanged vai logar automaticamente após o cadastro
             } catch (err) {
                 console.error(err);
                 errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
@@ -168,7 +165,6 @@
         };
 
         window.handleLogout = () => signOut(auth);
-
 
         // --- FUNÇÕES DO BANCO DE DADOS (FIRESTORE) ---
         async function loadUserTasks() {
@@ -182,7 +178,6 @@
                 if (docSnap.exists()) {
                     tasks = docSnap.data().tasks || [];
                 } else {
-                    // Primeiro acesso, cria o documento vazio
                     tasks = [];
                     await setDoc(docRef, { tasks: [] });
                 }
@@ -190,28 +185,24 @@
             } catch (err) {
                 console.error("Erro ao carregar tarefas:", err);
                 container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados da nuvem. Tentando novamente...</div>`;
-                // Tenta recarregar após 5 segundos em caso de erro de rede
                 setTimeout(loadUserTasks, 5000);
             }
         }
 
         async function saveAndRender() {
-            renderTasks(); // Atualiza a tela imediatamente (interface fluida)
+            renderTasks();
             
             if (!currentUser) return;
             
-            // Salva na nuvem em segundo plano
             try {
                 const docRef = doc(db, "users", currentUser.uid);
                 await setDoc(docRef, { tasks: tasks }, { merge: true });
             } catch (err) {
                 console.error("Erro ao salvar na nuvem:", err);
-                // Opcional: mostrar um aviso discreto de "Não sincronizado" na tela
             }
         }
 
-
-        // --- LÓGICA DE MANIPULAÇÃO DAS TAREFAS (UI e Dados Locais) ---
+        // --- LÓGICA DE MANIPULAÇÃO DAS TAREFAS ---
         window.addTask = function(title) {
             tasks.push({ id: Date.now(), title, subtasks: [] });
             saveAndRender();
@@ -352,7 +343,7 @@
                     <!-- Barra de Progresso Geral da Meta -->
                     <div class="space-y-1.5 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                         <div class="flex justify-between text-xs text-slate-300 font-semibold tracking-wide">
-                            <span>PROGRESSO TOTAL</span>
+                            <span>PROGRESSO</span>
                             <span class="text-indigo-300">${mainProgress}%</span>
                         </div>
                         <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700/50 shadow-inner">
@@ -408,9 +399,9 @@
                                                             <div class="flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-md border border-slate-700 shadow-inner text-[11px]">
                                                                 <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
                                                                     onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
-                                                                    class="w-14 bg-transparent text-right text-emerald-300 font-bold focus:outline-none focus:text-white" title="Quantidade atual (clique para editar)">
+                                                                    class="w-14 bg-transparent text-right text-emerald-300 font-bold focus:outline-none focus:text-white" title="Quantidade atual">
                                                                 <span class="text-slate-600">/</span>
-                                                                <span class="text-slate-400 font-medium" title="Quantidade total necessária">${item.totalQty}</span>
+                                                                <span class="text-slate-400 font-medium">${item.totalQty}</span>
                                                             </div>
                                                         ` : ''}
 
@@ -420,10 +411,9 @@
                                                     </div>
 
                                                     ${item.hasQuantity ? `
-                                                        <!-- Barra de Progresso Individual do Item -->
+                                                        <!-- Barra de Progresso Individual do Item (Sem o texto "Progresso do Item") -->
                                                         <div class="space-y-0.5 pt-1.5 border-t border-slate-700/50">
-                                                            <div class="flex justify-between text-[10px] text-slate-500 font-medium tracking-tight">
-                                                                <span>Progresso do Item</span>
+                                                            <div class="flex justify-end text-[10px] text-slate-400 font-medium tracking-tight">
                                                                 <span>${itemProg}% (${item.currentQty}/${item.totalQty})</span>
                                                             </div>
                                                             <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
@@ -439,10 +429,10 @@
                                     <!-- Formulário para adicionar Novo Item à Quest -->
                                     <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-slate-950/50 p-3 rounded-lg border border-slate-800 space-y-2.5 mt-3 shadow-inner">
                                         <div class="flex items-center justify-between gap-2">
-                                            <span class="text-[11px] font-semibold text-slate-400 tracking-wider">NOVO REQUISITO</span>
+                                            <span class="text-[11px] font-semibold text-slate-400 tracking-wider">NOVO:</span>
                                             <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-300 select-none bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
                                                 <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded w-3.5 h-3.5">
-                                                Usar Quantidade?
+                                                Add Quantidade?
                                             </label>
                                         </div>
                                         <div class="flex gap-2 items-center">
@@ -453,7 +443,7 @@
                                                 <input type="number" min="1" value="10" title="Quantidade total necessária" class="item-qty-total w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
                                             </div>
                                             <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-1.5 rounded-md text-xs transition flex items-center gap-1.5 shadow active:scale-95">
-                                                <i class="fa-solid fa-plus text-[10px]"></i> Item
+                                                <i class="fa-solid fa-plus text-[10px]"></i> ADD
                                             </button>
                                         </div>
                                     </form>
@@ -488,8 +478,8 @@
             const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
             const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
             if (title) addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty);
-            form.reset(); // Limpa o formulário
-            form.querySelector('.qty-container').classList.add('hidden'); // Esconde campos de qty
+            form.reset();
+            form.querySelector('.qty-container').classList.add('hidden');
         };
 
         window.handleSubtaskSubmit = function(e, taskId) {
@@ -510,7 +500,6 @@
             }
         });
 
-        // Função simples para evitar ataques XSS
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
