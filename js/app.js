@@ -1,610 +1,408 @@
-import { auth, db } from "./firebase-config.js";
-import { aqwDatabase, loadAqwDatabase } from "./database.js";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { PRESETS } from './database.js';
 
-let currentUser = null;
-let isGuest = false;
 let tasks = [];
 let currentFilter = 'all';
 
-function updateAQWServerTime() {
-    const now = new Date();
-    const estTimeStr = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: false });
-    const serverTimeEl = document.getElementById('aqw-server-time');
-    if (serverTimeEl) serverTimeEl.innerText = `${estTimeStr} EST`;
-
-    const estDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-    const estNow = new Date(`${estDateStr} ${estTimeStr}`);
-    const estReset = new Date(`${estDateStr} 24:00:00`);
-    let diffMs = estReset - estNow;
-
-    const hours = Math.floor(diffMs / (1000 * 60 * 60)).toString().padStart(2, '0');
-    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-    const secs = Math.floor((diffMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-
-    const resetTimerEl = document.getElementById('aqw-reset-timer');
-    if (resetTimerEl) resetTimerEl.innerText = `in ${hours}:${mins}:${secs}`;
-}
-setInterval(updateAQWServerTime, 1000);
-updateAQWServerTime();
-
-onAuthStateChanged(auth, async (user) => {
-    if (user && !isGuest) {
-        currentUser = user;
-        showApp(user.email);
-    } else if (!isGuest) {
-        showAuth();
-    }
-});
-
-window.handleGuestLogin = async () => {
-    isGuest = true;
-    currentUser = { uid: 'guest-local-user' };
-    showApp('Modo Convidado (Local)');
-};
-
-function showApp(identifier) {
+document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('auth-container').classList.add('hidden');
     document.getElementById('app-container').classList.remove('hidden');
-    document.getElementById('user-email-display').innerText = identifier;
-    loadAqwDatabase().then(() => loadUserTasks());
+    document.getElementById('user-email-display').innerText = 'Modo Local / Convidado';
+
+    loadTasksFromStorage();
+    initTimer();
+    setupEventListeners();
+});
+
+function loadTasksFromStorage() {
+    const saved = localStorage.getItem('aqw_metas_tasks');
+    if (saved) {
+        try {
+            tasks = JSON.parse(saved);
+        } catch (e) {
+            tasks = [];
+        }
+    }
+    renderTasks();
+    updateStats();
 }
 
-function showAuth() {
-    document.getElementById('auth-container').classList.remove('hidden');
-    document.getElementById('app-container').classList.add('hidden');
-    tasks = [];
-    document.getElementById('tasks-container').innerHTML = '';
+function saveTasksToStorage() {
+    localStorage.setItem('aqw_metas_tasks', JSON.stringify(tasks));
+    updateStats();
 }
 
-window.handleLogin = async () => {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const errDiv = document.getElementById('auth-error');
-    errDiv.classList.add('hidden');
-
-    if (!email || !password) {
-        errDiv.innerText = "Preencha e-mail e senha.";
-        errDiv.classList.remove('hidden');
-        return;
-    }
-
-    try {
-        isGuest = false;
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-        errDiv.innerText = "Erro ao entrar: Verifique e-mail/senha ou cadastre-se.";
-        errDiv.classList.remove('hidden');
-    }
+window.handleGuestLogin = () => {
+    document.getElementById('auth-container').classList.add('hidden');
+    document.getElementById('app-container').classList.remove('hidden');
+    document.getElementById('user-email-display').innerText = 'Modo Convidado';
+    loadTasksFromStorage();
 };
 
-window.handleRegister = async () => {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const errDiv = document.getElementById('auth-error');
-    errDiv.classList.add('hidden');
-
-    if (!email || password.length < 6) {
-        errDiv.innerText = "E-mail inválido ou senha com menos de 6 caracteres.";
-        errDiv.classList.remove('hidden');
-        return;
-    }
-
-    try {
-        isGuest = false;
-        await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-        errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
-        errDiv.classList.remove('hidden');
-    }
-};
-
+window.handleLogin = () => { window.handleGuestLogin(); };
+window.handleRegister = () => { window.handleGuestLogin(); };
 window.handleLogout = () => {
-    isGuest = false;
-    signOut(auth);
-    showAuth();
+    document.getElementById('app-container').classList.add('hidden');
+    document.getElementById('auth-container').classList.remove('hidden');
 };
 
-async function loadUserTasks() {
-    const container = document.getElementById('tasks-container');
-    try {
-        if (isGuest) {
-            const localData = localStorage.getItem('aqw_guest_tasks');
-            tasks = localData ? JSON.parse(localData) : [];
-        } else if (currentUser) {
-            const docRef = doc(db, "users", currentUser.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                tasks = docSnap.data().tasks || [];
-            } else {
-                tasks = [];
-                await setDoc(docRef, { tasks: [] });
-            }
-        }
-        renderTasks();
-    } catch (err) {
-        container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados.</div>`;
-    }
+function initTimer() {
+    setInterval(() => {
+        const now = new Date();
+        const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+        const hours = String(estTime.getHours()).padStart(2, '0');
+        const minutes = String(estTime.getMinutes()).padStart(2, '0');
+        const seconds = String(estTime.getSeconds()).padStart(2, '0');
+        
+        const timeEl = document.getElementById('aqw-server-time');
+        if (timeEl) timeEl.innerText = `${hours}:${minutes}:${seconds} EST`;
+
+        const nextEstMidnight = new Date(estTime);
+        nextEstMidnight.setHours(24, 0, 0, 0);
+        const diff = nextEstMidnight - estTime;
+
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+
+        const resetEl = document.getElementById('aqw-reset-timer');
+        if (resetEl) resetEl.innerText = `in ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, 1000);
 }
 
-async function saveAndRender() {
-    renderTasks();
-    try {
-        if (isGuest) {
-            localStorage.setItem('aqw_guest_tasks', JSON.stringify(tasks));
-        } else if (currentUser) {
-            const docRef = doc(db, "users", currentUser.uid);
-            await setDoc(docRef, { tasks: tasks }, { merge: true });
-        }
-    } catch (err) {
-        console.error("Erro ao salvar:", err);
-    }
-}
+function setupEventListeners() {
+    const form = document.getElementById('task-form');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('task-input');
+            const title = input.value.trim();
+            if (!title) return;
 
-window.setFilter = function(filter) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200";
-    });
-    const activeBtn = document.getElementById(`filter-${filter}`);
-    if (activeBtn) activeBtn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-indigo-600/20 text-indigo-300 border-indigo-500/40";
-    renderTasks();
-};
+            const newTask = {
+                id: Date.now().toString(),
+                title: title,
+                steps: [
+                    {
+                        title: "Passo 1: Objetivos Iniciais",
+                        requirements: []
+                    }
+                ]
+            };
 
-window.editTaskTitle = function(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    const newTitle = prompt("Edite o título da meta principal:", task.title);
-    if (newTitle !== null && newTitle.trim() !== "") {
-        task.title = newTitle.trim();
-        saveAndRender();
-    }
-};
-
-window.editSubtaskTitle = function(taskId, subtaskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    const sub = task.subtasks.find(s => s.id === subtaskId);
-    if (!sub) return;
-    const newTitle = prompt("Edite o título do passo:", sub.title);
-    if (newTitle !== null && newTitle.trim() !== "") {
-        sub.title = newTitle.trim();
-        saveAndRender();
-    }
-};
-
-window.addTask = function(title) {
-    const key = title.trim().toLowerCase();
-
-    if (aqwDatabase[key]) {
-        const preset = aqwDatabase[key];
-        tasks.push({
-            id: Date.now(),
-            title: preset.title,
-            subtasks: preset.subtasks.map((sub, sIdx) => ({
-                id: Date.now() + sIdx + 1,
-                title: sub.title,
-                items: sub.items.map((item, iIdx) => ({
-                    ...item,
-                    id: Date.now() + (sIdx * 10) + iIdx + 100
-                }))
-            }))
+            tasks.push(newTask);
+            saveTasksToStorage();
+            renderTasks();
+            input.value = '';
         });
-    } else {
-        tasks.push({ id: Date.now(), title: title.trim(), subtasks: [] });
     }
-    saveAndRender();
+}
+
+window.loadPreset = (key) => {
+    const preset = PRESETS[key];
+    if (!preset) return;
+
+    const newTask = {
+        id: Date.now().toString(),
+        title: preset.title,
+        steps: JSON.parse(JSON.stringify(preset.steps))
+    };
+
+    tasks.push(newTask);
+    saveTasksToStorage();
+    renderTasks();
 };
 
-window.deleteTask = function(id) {
-    if(confirm("Tem certeza que deseja excluir esta meta?")) {
-        tasks = tasks.filter(t => t.id !== id);
-        saveAndRender();
-    }
-};
-
-window.addSubtask = function(taskId, title) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        task.subtasks.push({ id: Date.now(), title, items: [] });
-        saveAndRender();
-    }
-};
-
-window.deleteSubtask = function(taskId, subtaskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
-        saveAndRender();
-    }
-};
-
-window.addItem = function(taskId, subtaskId, title, hasQuantity, currentQty, totalQty, isDaily = false) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        const subtask = task.subtasks.find(s => s.id === subtaskId);
-        if (subtask) {
-            const completed = hasQuantity ? (currentQty >= totalQty) : false;
-            subtask.items.push({
-                id: Date.now(), title, hasQuantity, isDaily,
-                currentQty: hasQuantity ? currentQty : 0,
-                totalQty: hasQuantity ? totalQty : 1, completed
-            });
-            saveAndRender();
-        }
-    }
-};
-
-window.toggleItem = function(taskId, subtaskId, itemId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        const subtask = task.subtasks.find(s => s.id === subtaskId);
-        if (subtask) {
-            const item = subtask.items.find(i => i.id === itemId);
-            if (item) {
-                item.completed = !item.completed;
-                if (item.hasQuantity) item.currentQty = item.completed ? item.totalQty : 0;
-                saveAndRender();
+window.setFilter = (filter) => {
+    currentFilter = filter;
+    ['all', 'active', 'completed'].forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        if (btn) {
+            if (f === filter) {
+                btn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-indigo-600/20 text-indigo-300 border-indigo-500/40";
+            } else {
+                btn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200";
             }
         }
-    }
+    });
+    renderTasks();
 };
 
-window.updateItemQuantity = function(taskId, subtaskId, itemId, newQty) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        const subtask = task.subtasks.find(s => s.id === subtaskId);
-        if (subtask) {
-            const item = subtask.items.find(i => i.id === itemId);
-            if (item && item.hasQuantity) {
-                item.currentQty = Math.max(0, Math.min(newQty, item.totalQty));
-                item.completed = item.currentQty >= item.totalQty;
-                saveAndRender();
-            }
-        }
-    }
-};
+function updateStats() {
+    let totalReqs = 0;
+    let compReqs = 0;
 
-window.adjustQuantity = function(taskId, subtaskId, itemId, amount) {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    const subtask = task.subtasks.find(s => s.id === subtaskId);
-    if (!subtask) return;
-    const item = subtask.items.find(i => i.id === itemId);
-    if (!item || !item.hasQuantity) return;
-
-    if (amount === 'max') {
-        item.currentQty = item.totalQty;
-    } else {
-        item.currentQty = Math.max(0, Math.min(item.currentQty + amount, item.totalQty));
-    }
-    item.completed = item.currentQty >= item.totalQty;
-    saveAndRender();
-};
-
-window.deleteItem = function(taskId, subtaskId, itemId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        const subtask = task.subtasks.find(s => s.id === subtaskId);
-        if (subtask) {
-            subtask.items = subtask.items.filter(i => i.id !== itemId);
-            saveAndRender();
-        }
-    }
-};
-
-window.resetDailies = function() {
-    if (!confirm("Deseja resetar o progresso de todas as missões marcadas como Daily?")) return;
     tasks.forEach(task => {
-        task.subtasks.forEach(sub => {
-            sub.items.forEach(item => {
-                if (item.isDaily) {
-                    item.currentQty = 0;
-                    item.completed = false;
+        if (task.steps) {
+            task.steps.forEach(step => {
+                if (step.requirements) {
+                    step.requirements.forEach(req => {
+                        totalReqs++;
+                        if (req.current >= req.max) compReqs++;
+                    });
+                }
+            });
+        }
+    });
+
+    const overall = totalReqs > 0 ? Math.round((compReqs / totalReqs) * 100) : 0;
+
+    const totalEl = document.getElementById('stat-total-tasks');
+    const compEl = document.getElementById('stat-completed-tasks');
+    const overallEl = document.getElementById('stat-overall-progress');
+
+    if (totalEl) totalEl.innerText = tasks.length;
+    if (compEl) compEl.innerText = compReqs;
+    if (overallEl) overallEl.innerText = `${overall}%`;
+}
+
+window.renderTasks = () => {
+    const container = document.getElementById('tasks-container');
+    const searchInput = document.getElementById('search-input');
+    const query = searchInput ? searchInput.value.toLowerCase() : '';
+
+    if (!tasks.length) {
+        container.innerHTML = `
+            <div class="text-center py-16 text-zinc-500 bg-zinc-900 rounded-xl border border-zinc-800">
+                <i class="fa-solid fa-dragon text-4xl mb-3 text-zinc-700"></i>
+                <p class="text-sm">Nenhuma meta cadastrada. Crie uma acima ou selecione um Preset Rápido!</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+
+    tasks.forEach((task, tIndex) => {
+        if (query && !task.title.toLowerCase().includes(query)) {
+            let match = false;
+            task.steps.forEach(step => {
+                step.requirements.forEach(req => {
+                    if (req.name.toLowerCase().includes(query)) match = true;
+                });
+            });
+            if (!match) return;
+        }
+
+        let totalR = 0;
+        let compR = 0;
+        task.steps.forEach(step => {
+            step.requirements.forEach(req => {
+                totalR++;
+                if (req.current >= req.max) compR++;
+            });
+        });
+        const taskProgress = totalR > 0 ? Math.round((compR / totalR) * 100) : 0;
+
+        if (currentFilter === 'active' && taskProgress === 100) return;
+        if (currentFilter === 'completed' && taskProgress < 100) return;
+
+        html += `
+            <div class="bg-zinc-900 rounded-xl border border-zinc-800 p-5 space-y-4 shadow-lg">
+                <div class="flex justify-between items-start border-b border-zinc-800 pb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-white">${task.title}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-mono ${taskProgress === 100 ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-indigo-950 text-indigo-400 border border-indigo-900/50'}">${taskProgress}%</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="deleteTask(${tIndex})" class="text-zinc-500 hover:text-red-400 p-1.5 transition" title="Excluir Meta">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+        `;
+
+        task.steps.forEach((step, sIndex) => {
+            let stepTotal = step.requirements.length;
+            let stepComp = step.requirements.filter(r => r.current >= r.max).length;
+            let stepProg = stepTotal > 0 ? Math.round((stepComp / stepTotal) * 100) : 0;
+
+            html += `
+                <div class="bg-zinc-950/60 p-4 rounded-lg border border-zinc-800/80 space-y-3">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-semibold text-zinc-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-angles-right text-indigo-400"></i> ${step.title}
+                        </span>
+                        <span class="text-zinc-500 font-mono">${stepProg}%</span>
+                    </div>
+
+                    <div class="space-y-2">
+            `;
+
+            step.requirements.forEach((req, rIndex) => {
+                const isDone = req.current >= req.max;
+                html += `
+                    <div class="flex items-center justify-between bg-zinc-900 p-2.5 rounded-lg border border-zinc-800 gap-2">
+                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
+                            <span class="text-xs truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
+                            ${req.isDaily ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-1.5 py-0.5 rounded font-medium">DAILY</span>' : ''}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1 font-mono text-xs">
+                                <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                <span class="text-zinc-500">/ ${req.max}</span>
+                            </div>
+                            <button onclick="setMaxReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition">Max</button>
+                            <button onclick="deleteReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-xs"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div class="pt-2 border-t border-zinc-900 flex gap-2 items-center">
+                        <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
+                        <input type="number" id="new-max-${tIndex}-${sIndex}" placeholder="Qtd" value="1" min="1" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
+                        <label class="flex items-center gap-1 text-[10px] text-zinc-400 cursor-pointer">
+                            <input type="checkbox" id="new-daily-${tIndex}-${sIndex}" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600"> Diário?
+                        </label>
+                        <button onclick="addReq(${tIndex}, ${sIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-3 py-1 rounded transition">Adicionar</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                    <div class="flex gap-2 pt-2">
+                        <input type="text" id="new-step-${tIndex}" placeholder="Novo passo (ex: Passo ${task.steps.length + 1})..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
+                        <button onclick="addStep(${tIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700 transition">+ Passo</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    updateStats();
+};
+
+window.toggleReq = (tIndex, sIndex, rIndex) => {
+    const req = tasks[tIndex].steps[sIndex].requirements[rIndex];
+    if (req.current >= req.max) {
+        req.current = 0;
+    } else {
+        req.current = req.max;
+    }
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.updateReqValue = (tIndex, sIndex, rIndex, val) => {
+    const num = parseInt(val);
+    if (!isNaN(num)) {
+        tasks[tIndex].steps[sIndex].requirements[rIndex].current = Math.max(0, Math.min(num, tasks[tIndex].steps[sIndex].requirements[rIndex].max));
+        saveTasksToStorage();
+        renderTasks();
+    }
+};
+
+window.setMaxReq = (tIndex, sIndex, rIndex) => {
+    const req = tasks[tIndex].steps[sIndex].requirements[rIndex];
+    req.current = req.max;
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.deleteReq = (tIndex, sIndex, rIndex) => {
+    tasks[tIndex].steps[sIndex].requirements.splice(rIndex, 1);
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.addReq = (tIndex, sIndex) => {
+    const nameInput = document.getElementById(`new-req-${tIndex}-${sIndex}`);
+    const maxInput = document.getElementById(`new-max-${tIndex}-${sIndex}`);
+    const dailyInput = document.getElementById(`new-daily-${tIndex}-${sIndex}`);
+
+    const name = nameInput.value.trim();
+    const max = parseInt(maxInput.value) || 1;
+    const isDaily = dailyInput ? dailyInput.checked : false;
+
+    if (!name) return;
+
+    tasks[tIndex].steps[sIndex].requirements.push({
+        name,
+        current: 0,
+        max,
+        isDaily
+    });
+
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.addStep = (tIndex) => {
+    const input = document.getElementById(`new-step-${tIndex}`);
+    const title = input.value.trim();
+    if (!title) return;
+
+    tasks[tIndex].steps.push({
+        title,
+        requirements: []
+    });
+
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.deleteTask = (tIndex) => {
+    if (confirm("Deseja realmente excluir esta meta?")) {
+        tasks.splice(tIndex, 1);
+        saveTasksToStorage();
+        renderTasks();
+    }
+};
+
+window.resetDailies = () => {
+    let count = 0;
+    tasks.forEach(task => {
+        task.steps.forEach(step => {
+            step.requirements.forEach(req => {
+                if (req.isDaily && req.current > 0) {
+                    req.current = 0;
+                    count++;
                 }
             });
         });
     });
-    saveAndRender();
+    saveTasksToStorage();
+    renderTasks();
+    alert(`Reset de Dailies aplicado! ${count} requisitos diários zerados.`);
 };
 
-window.loadPreset = function(presetKey) {
-    addTask(presetKey);
-};
-
-window.exportData = function() {
+window.exportData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `metas-aqw-backup-${new Date().toISOString().slice(0,10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `metas_aqw_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
 };
 
-window.importData = function(event) {
-    const fileReader = new FileReader();
-    fileReader.onload = function(e) {
+window.importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
         try {
-            const importedTasks = JSON.parse(e.target.result);
-            if (Array.isArray(importedTasks)) {
-                tasks = importedTasks;
-                saveAndRender();
-                alert("Backup importado com sucesso!");
+            const imported = JSON.parse(e.target.result);
+            if (Array.isArray(imported)) {
+                tasks = imported;
+                saveTasksToStorage();
+                renderTasks();
+                alert("Dados importados com sucesso!");
             } else {
-                alert("Arquivo JSON inválido.");
+                alert("Arquivo inválido.");
             }
-        } catch(err) {
+        } catch (err) {
             alert("Erro ao ler o arquivo JSON.");
         }
     };
-    if (event.target.files[0]) {
-        fileReader.readAsText(event.target.files[0]);
-    }
+    reader.readAsText(file);
 };
-
-function getItemProgress(item) {
-    if (!item.hasQuantity) return item.completed ? 100 : 0;
-    if (item.totalQty <= 0) return 0;
-    return Math.min(100, Math.round((item.currentQty / item.totalQty) * 100));
-}
-
-function getSubtaskProgress(subtask) {
-    if (!subtask.items || subtask.items.length === 0) return 0;
-    let totalPercent = 0;
-    subtask.items.forEach(item => totalPercent += getItemProgress(item));
-    return Math.round(totalPercent / subtask.items.length);
-}
-
-function getTaskProgress(task) {
-    if (!task.subtasks || task.subtasks.length === 0) return 0;
-    let totalPercent = 0;
-    task.subtasks.forEach(sub => totalPercent += getSubtaskProgress(sub));
-    return Math.round(totalPercent / task.subtasks.length);
-}
-
-function updateStats() {
-    const totalTasks = tasks.length;
-    let completedTasks = 0;
-    let totalProgressSum = 0;
-
-    tasks.forEach(task => {
-        const prog = getTaskProgress(task);
-        totalProgressSum += prog;
-        if (prog === 100 && task.subtasks.length > 0) completedTasks++;
-    });
-
-    const overallProgress = totalTasks > 0 ? Math.round(totalProgressSum / totalTasks) : 0;
-
-    document.getElementById('stat-total-tasks').innerText = totalTasks;
-    document.getElementById('stat-completed-tasks').innerText = completedTasks;
-    document.getElementById('stat-overall-progress').innerText = `${overallProgress}%`;
-}
-
-window.renderTasks = function() {
-    updateStats();
-    const container = document.getElementById('tasks-container');
-    const searchQuery = (document.getElementById('search-input')?.value || '').toLowerCase();
-    container.innerHTML = '';
-
-    let filteredTasks = tasks.filter(task => {
-        const matchesSearch = task.title.toLowerCase().includes(searchQuery) ||
-            task.subtasks.some(s => s.title.toLowerCase().includes(searchQuery) || 
-            s.items.some(i => i.title.toLowerCase().includes(searchQuery)));
-        const prog = getTaskProgress(task);
-        const isCompleted = prog === 100 && task.subtasks.length > 0;
-
-        if (currentFilter === 'active') return matchesSearch && !isCompleted;
-        if (currentFilter === 'completed') return matchesSearch && isCompleted;
-        return matchesSearch;
-    });
-
-    if (filteredTasks.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800 border-dashed text-zinc-500">
-                <i class="fa-solid fa-inbox text-3xl mb-2 text-zinc-600"></i>
-                <p class="text-xs text-zinc-400 font-medium">Nenhuma meta encontrada.</p>
-            </div>`;
-        return;
-    }
-
-    filteredTasks.forEach(task => {
-        const mainProgress = getTaskProgress(task);
-        const isMastered = mainProgress === 100 && task.subtasks.length > 0;
-        const card = document.createElement('div');
-        card.className = `bg-zinc-900 rounded-xl border ${isMastered ? 'border-emerald-500/40' : 'border-zinc-800'} p-5 shadow-sm space-y-4 transition`;
-
-        card.innerHTML = `
-            <div class="flex items-center justify-between gap-3 border-b border-zinc-800 pb-3">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-flag ${isMastered ? 'text-emerald-400' : 'text-indigo-400'} text-sm"></i>
-                    <h2 class="font-semibold text-base text-zinc-100 flex items-center gap-2">
-                        ${escapeHtml(task.title)}
-                        <button onclick="editTaskTitle(${task.id})" class="text-zinc-500 hover:text-zinc-300 text-xs transition" title="Editar Título">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                    </h2>
-                    ${isMastered ? '<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-500/20">CONCLUÍDO</span>' : ''}
-                </div>
-                <button onclick="deleteTask(${task.id})" class="text-zinc-500 hover:text-red-400 transition text-xs p-1 rounded" title="Excluir meta">
-                    <i class="fa-regular fa-trash-can"></i>
-                </button>
-            </div>
-
-            <div class="space-y-1 bg-zinc-950 p-3 rounded-lg border border-zinc-800/80">
-                <div class="flex justify-between text-xs font-medium">
-                    <span class="text-zinc-400">Progresso da Meta</span>
-                    <span class="${isMastered ? 'text-emerald-400' : 'text-indigo-400'} font-semibold">${mainProgress}%</span>
-                </div>
-                <div class="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-800">
-                    <div class="${isMastered ? 'bg-emerald-500' : 'bg-indigo-500'} h-2 rounded-full transition-all duration-300" style="width: ${mainProgress}%"></div>
-                </div>
-            </div>
-
-            <div class="space-y-3 pt-1">
-                ${task.subtasks.map(sub => {
-                    const subProgress = getSubtaskProgress(sub);
-                    return `
-                        <div class="bg-zinc-950/60 p-3.5 rounded-lg border border-zinc-800/80 space-y-3">
-                            <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                                <span class="text-xs font-medium text-zinc-200 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-list-ul text-[10px] text-indigo-400"></i>
-                                    ${escapeHtml(sub.title)}
-                                    <button onclick="editSubtaskTitle(${task.id}, ${sub.id})" class="text-zinc-500 hover:text-zinc-300 text-xs transition" title="Editar Passo">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </button>
-                                </span>
-                                <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-zinc-500 hover:text-red-400 transition text-xs">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[10px] text-zinc-400">
-                                    <span>Progresso do Passo</span>
-                                    <span class="text-emerald-400 font-semibold">${subProgress}%</span>
-                                </div>
-                                <div class="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden border border-zinc-800">
-                                    <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-1.5 pl-2 border-l border-zinc-800">
-                                ${sub.items.map(item => {
-                                    const itemProg = getItemProgress(item);
-                                    const wikiUrl = `https://aqwwiki.wikidot.com/search:main/q/${encodeURIComponent(item.title)}`;
-                                    return `
-                                        <div class="bg-zinc-900/90 p-2.5 rounded border border-zinc-800/80 text-xs space-y-1.5 hover:border-zinc-700 transition">
-                                            <div class="flex items-center justify-between gap-2 flex-wrap">
-                                                <label class="flex items-center gap-2 cursor-pointer flex-1 select-none min-w-[140px]">
-                                                    <input type="checkbox" ${item.completed ? 'checked' : ''} 
-                                                        onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
-                                                        class="w-3.5 h-3.5 accent-indigo-500 rounded cursor-pointer bg-zinc-950 border-zinc-700">
-                                                    <span class="${item.completed ? 'line-through text-zinc-500' : 'text-zinc-200'} font-medium flex-1">
-                                                        ${escapeHtml(item.title)}
-                                                    </span>
-                                                </label>
-
-                                                <div class="flex items-center gap-1.5 flex-wrap">
-                                                    ${item.isDaily ? `
-                                                        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                            <i class="fa-regular fa-calendar text-[8px]"></i> DAILY
-                                                        </span>
-                                                    ` : ''}
-
-                                                    <a href="${wikiUrl}" target="_blank" title="Buscar na AQW Wiki" class="text-zinc-500 hover:text-indigo-400 transition text-xs p-1">
-                                                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                                                    </a>
-
-                                                    ${item.hasQuantity ? `
-                                                        <div class="flex items-center gap-1 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 text-[11px]">
-                                                            <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
-                                                                onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
-                                                                class="w-10 bg-transparent text-right text-emerald-400 font-semibold focus:outline-none">
-                                                            <span class="text-zinc-600">/</span>
-                                                            <span class="text-zinc-400">${item.totalQty}</span>
-
-                                                            <button onclick="adjustQuantity(${task.id}, ${sub.id}, ${item.id}, 1)" class="bg-zinc-800 hover:bg-zinc-700 px-1.5 rounded text-[10px] text-zinc-300 ml-1">+</button>
-                                                            <button onclick="adjustQuantity(${task.id}, ${sub.id}, ${item.id}, 'max')" class="bg-zinc-800 hover:bg-zinc-700 px-1.5 rounded text-[10px] text-indigo-400">Max</button>
-                                                        </div>
-                                                    ` : ''}
-
-                                                    <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-zinc-500 hover:text-red-400 transition text-xs p-1">
-                                                        <i class="fa-solid fa-trash-can text-[10px]"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            ${item.hasQuantity ? `
-                                                <div class="w-full bg-zinc-950 rounded-full h-1 overflow-hidden border border-zinc-800/50">
-                                                    <div class="bg-indigo-500 h-1 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-
-                            <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-zinc-900/40 p-2.5 rounded border border-zinc-800 space-y-2 mt-2">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Adicionar Requisito:</span>
-                                    <div class="flex items-center gap-2">
-                                        <label class="flex items-center gap-1 cursor-pointer text-[10px] text-zinc-400 select-none">
-                                            <input type="checkbox" class="daily-toggle accent-emerald-500 rounded w-3 h-3">
-                                            Daily?
-                                        </label>
-                                        <label class="flex items-center gap-1 cursor-pointer text-[10px] text-zinc-400 select-none">
-                                            <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded w-3 h-3">
-                                            Qtd?
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="flex gap-1.5 items-center">
-                                    <input type="text" placeholder="Nome do requisito..." required class="item-title flex-1 bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500">
-                                    <div class="qty-container hidden flex items-center gap-1 bg-zinc-950 p-0.5 rounded border border-zinc-800">
-                                        <input type="number" min="0" value="0" class="item-qty-current w-10 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-center text-zinc-100">
-                                        <span class="text-zinc-600 text-xs">/</span>
-                                        <input type="number" min="1" value="10" class="item-qty-total w-10 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-center text-zinc-100">
-                                    </div>
-                                    <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium px-2.5 py-1 rounded text-xs border border-zinc-700 transition">
-                                        Add
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-
-            <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-2 border-t border-zinc-800">
-                <input type="text" placeholder="Novo passo (ex: Passo 4)..." required class="subtask-input flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition">
-                <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-3 py-1.5 rounded-lg text-xs border border-zinc-700 transition flex items-center gap-1">
-                    <i class="fa-solid fa-plus text-[10px]"></i> Passo
-                </button>
-            </form>
-        `;
-        container.appendChild(card);
-    });
-};
-
-window.toggleQtyInputs = function(checkbox) {
-    const form = checkbox.closest('form');
-    form.querySelector('.qty-container').classList.toggle('hidden', !checkbox.checked);
-};
-
-window.handleItemSubmit = function(e, taskId, subtaskId) {
-    e.preventDefault();
-    const form = e.target;
-    const title = form.querySelector('.item-title').value.trim();
-    const hasQuantity = form.querySelector('.qty-toggle').checked;
-    const isDaily = form.querySelector('.daily-toggle').checked;
-    const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
-    const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
-    if (title) addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty, isDaily);
-    form.reset();
-    form.querySelector('.qty-container').classList.add('hidden');
-};
-
-window.handleSubtaskSubmit = function(e, taskId) {
-    e.preventDefault();
-    const input = e.target.querySelector('.subtask-input');
-    if (input.value.trim()) {
-        addSubtask(taskId, input.value.trim());
-        input.value = '';
-    }
-};
-
-document.getElementById('task-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = document.getElementById('task-input');
-    if (input.value.trim()) {
-        addTask(input.value.trim());
-        input.value = '';
-    }
-});
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
-}
