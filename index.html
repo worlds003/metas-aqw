@@ -1,169 +1,491 @@
-const defaultDatabase = {
-    "vhl": {
-        title: "Void Highlord (VHL)",
-        subtasks: [
-            {
-                id: "vhl_challenge",
-                title: "Void Highlord's Challenge (/join tercessuinotlim)",
-                items: [
-                    { 
-                        id: "roent", 
-                        title: "Roentgenium of Nulgath", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 15, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Void Highlord's Challenge",
-                        questName: "Void Highlord's Challenge Quest"
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQW Quest Tracker</title>
+    <!-- Tailwind CSS para estilização rápida e moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom Scrollbar Dark */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-12">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-amber-500 text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide text-amber-400">AQW META TRACKER</h1>
+            </div>
+            
+            <!-- Seleção de Metas Principais -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <label for="goal-select" class="text-sm font-medium text-slate-400 whitespace-nowrap">Meta Ativa:</label>
+                <select id="goal-select" class="bg-slate-800 border border-slate-700 text-amber-300 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 outline-none font-semibold cursor-pointer">
+                    <!-- Opções geradas via JS -->
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-6">
+        
+        <!-- Dashboard do Progresso Geral -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                <div>
+                    <h2 id="current-goal-title" class="text-2xl font-black text-slate-100 uppercase tracking-wide">
+                        Carregando...
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Acompanhe seu progresso e guia de quests</p>
+                </div>
+                <span id="overall-percentage" class="text-2xl font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
+                    0%
+                </span>
+            </div>
+
+            <!-- Barra de Progresso Principal -->
+            <div class="w-full bg-slate-950 rounded-full h-4 p-0.5 border border-slate-800">
+                <div id="overall-progress-bar" class="bg-gradient-to-r from-amber-600 to-amber-400 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </section>
+
+        <!-- Lista de Quests / Subtarefas -->
+        <div id="quests-container" class="space-y-6">
+            <!-- As caixas de quests serão renderizadas aqui via JS -->
+        </div>
+
+        <!-- Botão de Adicionar Nova Quest/Categoria -->
+        <div class="mt-6 flex justify-end">
+            <button onclick="addNewQuestGroup()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                <i class="fa-solid fa-plus text-amber-400"></i> Adicionar Nova Seção / Quest
+            </button>
+        </div>
+    </main>
+
+    <!-- JS Principal -->
+    <script>
+        // Database Inicial das Metas com as Informações de Local, NPC e Quest
+        const defaultDatabase = {
+            "vhl": {
+                title: "Void Highlord (VHL)",
+                subtasks: [
+                    {
+                        id: "vhl_challenge",
+                        title: "Void Highlord's Challenge (/join tercessuinotlim)",
+                        items: [
+                            { 
+                                id: "roent", 
+                                title: "Roentgenium of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Void Highlord's Challenge",
+                                questName: "Void Highlord's Challenge Quest"
+                            },
+                            { 
+                                id: "eblood", 
+                                title: "Elder's Blood", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: true, 
+                                completed: false,
+                                location: "/join arcangrove",
+                                npc: "Reens",
+                                questName: "Gorillaphant Blood (Daily)"
+                            },
+                            { 
+                                id: "voucher_nonmem", 
+                                title: "Voucher of Nulgath (non-mem)", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 1, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Supplies to spin the Wheel of Chance / Nulgath Challenge"
+                            },
+                            { 
+                                id: "bk_orb", 
+                                title: "Black Knight Orb", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join badlands",
+                                npc: "Gravelyn / Black Knight Quest",
+                                questName: "Black Knight Orb Quest"
+                            }
+                        ]
                     },
-                    { 
-                        id: "eblood", 
-                        title: "Elder's Blood", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 15, 
-                        isDaily: true, 
-                        completed: false,
-                        location: "/join arcangrove",
-                        npc: "Reens",
-                        questName: "Gorillaphant Blood (Daily)"
+                    {
+                        id: "v_crystal_a",
+                        title: "Void Crystal A (Reagentes de Troca)",
+                        items: [
+                            { 
+                                id: "uni10", 
+                                title: "Unidentified 10", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Bamboozle",
+                                questName: "Nulgath (Supplies to spin the Wheel) / Swindle Bilk"
+                            },
+                            { 
+                                id: "gem_nulgath", 
+                                title: "Gem of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 150, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Larvae",
+                                questName: "Voucher Item: Gem of Nulgath / Nulgath Larvae"
+                            },
+                            { 
+                                id: "dcs", 
+                                title: "Dark Crystal Shard", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Essence of Nulgath / Swindle Return Policy"
+                            },
+                            { 
+                                id: "tainted_gem", 
+                                title: "Tainted Gem", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Swindle",
+                                questName: "Cube Reagents / Swindle Bilk Quests"
+                            }
+                        ]
                     },
-                    { 
-                        id: "voucher_nonmem", 
-                        title: "Voucher of Nulgath (non-mem)", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 1, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath",
-                        questName: "Supplies to spin the Wheel of Chance / Nulgath Challenge"
-                    },
-                    { 
-                        id: "bk_orb", 
-                        title: "Black Knight Orb", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 15, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join badlands",
-                        npc: "Gravelyn / Black Knight Quest",
-                        questName: "Black Knight Orb Quest"
-                    }
-                ]
-            },
-            {
-                id: "v_crystal_a",
-                title: "Void Crystal A (Reagentes de Troca)",
-                items: [
-                    { 
-                        id: "uni10", 
-                        title: "Unidentified 10", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 200, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath / Bamboozle",
-                        questName: "Nulgath (Supplies to spin the Wheel) / Swindle Bilk"
-                    },
-                    { 
-                        id: "gem_nulgath", 
-                        title: "Gem of Nulgath", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 150, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath / Larvae",
-                        questName: "Voucher Item: Gem of Nulgath / Nulgath Larvae"
-                    },
-                    { 
-                        id: "dcs", 
-                        title: "Dark Crystal Shard", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 200, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath",
-                        questName: "Essence of Nulgath / Swindle Return Policy"
-                    },
-                    { 
-                        id: "tainted_gem", 
-                        title: "Tainted Gem", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 200, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath / Swindle",
-                        questName: "Cube Reagents / Swindle Bilk Quests"
-                    }
-                ]
-            },
-            {
-                id: "v_crystal_b",
-                title: "Void Crystal B (Reagentes de Troca)",
-                items: [
-                    { 
-                        id: "diamond_nulgath", 
-                        title: "Diamond of Nulgath", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 200, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath",
-                        questName: "Supplies to spin the Wheel / Diamond Exchange"
-                    },
-                    { 
-                        id: "blood_gem", 
-                        title: "Blood Gem of the Archfiend", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 30, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath / Tendurr",
-                        questName: "Kiss the Void / Bloody Chaos"
-                    },
-                    { 
-                        id: "emblem_nulgath", 
-                        title: "Emblem of Nulgath", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 20, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join shadowblast",
-                        npc: "Nation Recruiter",
-                        questName: "Deend of Valor Quest"
-                    },
-                    { 
-                        id: "totem_nulgath", 
-                        title: "Totem of Nulgath", 
-                        hasQuantity: true, 
-                        currentQty: 0, 
-                        totalQty: 15, 
-                        isDaily: false, 
-                        completed: false,
-                        location: "/join tercessuinotlim",
-                        npc: "Nulgath",
-                        questName: "Essence of Nulgath (100 Essences -> 1 Totem)"
+                    {
+                        id: "v_crystal_b",
+                        title: "Void Crystal B (Reagentes de Troca)",
+                        items: [
+                            { 
+                                id: "diamond_nulgath", 
+                                title: "Diamond of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Supplies to spin the Wheel / Diamond Exchange"
+                            },
+                            { 
+                                id: "blood_gem", 
+                                title: "Blood Gem of the Archfiend", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 30, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Tendurr",
+                                questName: "Kiss the Void / Bloody Chaos"
+                            },
+                            { 
+                                id: "emblem_nulgath", 
+                                title: "Emblem of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 20, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join shadowblast",
+                                npc: "Nation Recruiter",
+                                questName: "Deend of Valor Quest"
+                            },
+                            { 
+                                id: "totem_nulgath", 
+                                title: "Totem of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Essence of Nulgath (100 Essences -> 1 Totem)"
+                            }
+                        ]
                     }
                 ]
             }
-        ]
-    }
-};
+        };
+
+        // Estado da Aplicação
+        let aqwData = JSON.parse(localStorage.getItem('aqw_tracker_data')) || defaultDatabase;
+        let currentGoalKey = localStorage.getItem('aqw_current_goal') || 'vhl';
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGoalSelect();
+            renderActiveGoal();
+        });
+
+        // Salvar dados no LocalStorage
+        function saveData() {
+            localStorage.setItem('aqw_tracker_data', JSON.stringify(aqwData));
+            localStorage.setItem('aqw_current_goal', currentGoalKey);
+            renderActiveGoal();
+        }
+
+        // Renderiza o select do topo
+        function renderGoalSelect() {
+            const select = document.getElementById('goal-select');
+            select.innerHTML = '';
+            
+            Object.keys(aqwData).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = aqwData[key].title;
+                if(key === currentGoalKey) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            select.onchange = (e) => {
+                currentGoalKey = e.target.value;
+                saveData();
+            };
+        }
+
+        // Renderiza a meta ativa e suas subtarefas
+        function renderActiveGoal() {
+            const goal = aqwData[currentGoalKey];
+            if (!goal) return;
+
+            document.getElementById('current-goal-title').textContent = goal.title;
+            const container = document.getElementById('quests-container');
+            container.innerHTML = '';
+
+            let totalItemsCount = 0;
+            let completedItemsCount = 0;
+
+            goal.subtasks.forEach((subtask, sIdx) => {
+                const subtaskCard = document.createElement('div');
+                subtaskCard.className = "bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg";
+
+                // Cálculo do progresso da Subtarefa
+                let subTotal = subtask.items.length;
+                let subDone = 0;
+
+                subtask.items.forEach(item => {
+                    totalItemsCount++;
+                    if (item.hasQuantity) {
+                        if (item.currentQty >= item.totalQty) subDone++;
+                    } else {
+                        if (item.completed) subDone++;
+                    }
+                });
+
+                completedItemsCount += subDone;
+                const subPerc = subTotal > 0 ? Math.round((subDone / subTotal) * 100) : 0;
+
+                // Header da Subtarefa
+                subtaskCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-amber-500"></i> ${subtask.title}
+                        </h3>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-semibold text-slate-400">${subPerc}%</span>
+                            <button onclick="deleteSubtask(${sIdx})" class="text-slate-500 hover:text-red-400 text-sm transition" title="Excluir Seção">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progresso da Seção -->
+                    <div class="w-full bg-slate-950 rounded-full h-2 mb-4 border border-slate-800">
+                        <div class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subPerc}%"></div>
+                    </div>
+
+                    <!-- Itens da Seção -->
+                    <div class="space-y-3">
+                        ${subtask.items.map((item, iIdx) => renderItemHTML(sIdx, iIdx, item)).join('')}
+                    </div>
+
+                    <!-- Formulário para adicionar novos itens -->
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap gap-2 items-center">
+                        <input type="text" id="new-item-title-${sIdx}" placeholder="Nome do item..." class="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 flex-1">
+                        <input type="text" id="new-item-loc-${sIdx}" placeholder="/join mapa" class="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 w-28">
+                        <input type="text" id="new-item-npc-${sIdx}" placeholder="NPC" class="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 w-24">
+                        <button onclick="addItemToSubtask(${sIdx})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded text-xs font-semibold transition">
+                            + Add Item
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(subtaskCard);
+            });
+
+            // Atualiza progresso geral do topo
+            const overallPerc = totalItemsCount > 0 ? Math.round((completedItemsCount / totalItemsCount) * 100) : 0;
+            document.getElementById('overall-percentage').textContent = `${overallPerc}%`;
+            document.getElementById('overall-progress-bar').style.width = `${overallPerc}%`;
+        }
+
+        // Renderiza cada linha de item
+        function renderItemHTML(sIdx, iIdx, item) {
+            const isDone = item.hasQuantity ? (item.currentQty >= item.totalQty) : item.completed;
+            
+            return `
+                <div class="bg-slate-950 border ${isDone ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-slate-800'} rounded-lg p-3 transition">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        
+                        <!-- Checkbox + Título + Badges -->
+                        <div class="flex items-start gap-3 flex-1">
+                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleItemDone(${sIdx}, ${iIdx}, this.checked)" class="mt-1 w-4 h-4 rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-950 cursor-pointer">
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-medium text-sm ${isDone ? 'line-through text-slate-500' : 'text-slate-200'}">
+                                        ${item.title}
+                                    </span>
+                                    ${item.isDaily ? '<span class="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-bold">DAILY</span>' : ''}
+                                </div>
+
+                                <!-- GUIA RÁPIDO: Localização, NPC e Quest -->
+                                ${(item.location || item.npc || item.questName) ? `
+                                    <div class="flex flex-wrap gap-2 mt-1.5 text-[11px]">
+                                        ${item.location ? `<span class="bg-slate-900 text-amber-300 border border-slate-800 px-2 py-0.5 rounded"><i class="fa-solid fa-location-dot text-amber-500 mr-1"></i>${item.location}</span>` : ''}
+                                        ${item.npc ? `<span class="bg-slate-900 text-sky-300 border border-slate-800 px-2 py-0.5 rounded"><i class="fa-solid fa-user text-sky-400 mr-1"></i>${item.npc}</span>` : ''}
+                                        ${item.questName ? `<span class="bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 rounded"><i class="fa-solid fa-scroll text-slate-500 mr-1"></i>${item.questName}</span>` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Quantidade e Ações -->
+                        <div class="flex items-center gap-3 self-end md:self-center">
+                            ${item.hasQuantity ? `
+                                <div class="flex items-center bg-slate-900 border border-slate-800 rounded-md p-1 gap-1">
+                                    <button onclick="updateQty(${sIdx}, ${iIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-xs font-bold">-</button>
+                                    <input type="number" value="${item.currentQty}" onchange="setQtyDirect(${sIdx}, ${iIdx}, this.value)" class="w-12 bg-transparent text-center text-xs font-semibold text-amber-400 focus:outline-none">
+                                    <span class="text-xs text-slate-500">/ ${item.totalQty}</span>
+                                    <button onclick="updateQty(${sIdx}, ${iIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-xs font-bold">+</button>
+                                </div>
+                            ` : ''}
+
+                            <button onclick="deleteItem(${sIdx}, ${iIdx})" class="text-slate-600 hover:text-red-400 text-xs p-1 transition" title="Excluir Item">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funções de Manipulação do Estado
+        function toggleItemDone(sIdx, iIdx, isChecked) {
+            const item = aqwData[currentGoalKey].subtasks[sIdx].items[iIdx];
+            if(item.hasQuantity) {
+                item.currentQty = isChecked ? item.totalQty : 0;
+            } else {
+                item.completed = isChecked;
+            }
+            saveData();
+        }
+
+        function updateQty(sIdx, iIdx, delta) {
+            const item = aqwData[currentGoalKey].subtasks[sIdx].items[iIdx];
+            item.currentQty = Math.max(0, Math.min(item.totalQty, item.currentQty + delta));
+            saveData();
+        }
+
+        function setQtyDirect(sIdx, iIdx, val) {
+            const item = aqwData[currentGoalKey].subtasks[sIdx].items[iIdx];
+            const parsed = parseInt(val) || 0;
+            item.currentQty = Math.max(0, Math.min(item.totalQty, parsed));
+            saveData();
+        }
+
+        function deleteItem(sIdx, iIdx) {
+            aqwData[currentGoalKey].subtasks[sIdx].items.splice(iIdx, 1);
+            saveData();
+        }
+
+        function deleteSubtask(sIdx) {
+            if(confirm("Tem certeza que deseja excluir esta seção inteira?")) {
+                aqwData[currentGoalKey].subtasks.splice(sIdx, 1);
+                saveData();
+            }
+        }
+
+        function addItemToSubtask(sIdx) {
+            const titleInput = document.getElementById(`new-item-title-${sIdx}`);
+            const locInput = document.getElementById(`new-item-loc-${sIdx}`);
+            const npcInput = document.getElementById(`new-item-npc-${sIdx}`);
+
+            if(!titleInput.value.trim()) return;
+
+            aqwData[currentGoalKey].subtasks[sIdx].items.push({
+                id: 'custom_' + Date.now(),
+                title: titleInput.value.trim(),
+                hasQuantity: false,
+                currentQty: 0,
+                totalQty: 1,
+                isDaily: false,
+                completed: false,
+                location: locInput.value.trim(),
+                npc: npcInput.value.trim(),
+                questName: ""
+            });
+
+            saveData();
+        }
+
+        function addNewQuestGroup() {
+            const title = prompt("Nome da nova seção/quest:");
+            if(title && title.trim()) {
+                aqwData[currentGoalKey].subtasks.push({
+                    id: 'group_' + Date.now(),
+                    title: title.trim(),
+                    items: []
+                });
+                saveData();
+            }
+        }
+    </script>
+</body>
+</html>
