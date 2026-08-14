@@ -17,7 +17,7 @@
             <h1 class="text-3xl font-bold tracking-tight text-indigo-400 flex items-center justify-center gap-2">
                 <i class="fa-solid fa-list-check"></i> METAS NO AQW
             </h1>
-            <p class="text-slate-400 text-sm">Gerencie suas metas de itens, classes e requisitos do AQW.</p>
+            <p class="text-slate-400 text-sm">Gerencie suas metas de itens, classes e requisitos com contagem de quantidades.</p>
         </header>
 
         <!-- Formulário para Nova Meta Principal -->
@@ -40,7 +40,7 @@
 
     <!-- Script da Aplicação -->
     <script>
-        let tasks = JSON.parse(localStorage.getItem('metas_aqw_tasks_v2')) || [
+        let tasks = JSON.parse(localStorage.getItem('metas_aqw_tasks_v3')) || [
             {
                 id: 1,
                 title: "Exemplo: Void Highlord",
@@ -49,15 +49,8 @@
                         id: 101,
                         title: "Roentgenium of Nulgath (15x)",
                         items: [
-                            { id: 1001, title: "Black Knight Orb", completed: true },
-                            { id: 1002, title: "Elemental Ink (10x)", completed: false }
-                        ]
-                    },
-                    {
-                        id: 102,
-                        title: "Void Crystal A",
-                        items: [
-                            { id: 1003, title: "Unidentified 10 (200x)", completed: true }
+                            { id: 1001, title: "Tainted Gem", hasQuantity: true, currentQty: 20, totalQty: 50, completed: false },
+                            { id: 1002, title: "Black Knight Orb", hasQuantity: false, currentQty: 0, totalQty: 1, completed: true }
                         ]
                     }
                 ]
@@ -65,11 +58,11 @@
         ];
 
         function saveAndRender() {
-            localStorage.setItem('metas_aqw_tasks_v2', JSON.stringify(tasks));
+            localStorage.setItem('metas_aqw_tasks_v3', JSON.stringify(tasks));
             renderTasks();
         }
 
-        // Funções para Meta Principal
+        // --- FUNÇÕES DE NÍVEL 1: META PRINCIPAL ---
         function addTask(title) {
             tasks.push({ id: Date.now(), title, subtasks: [] });
             saveAndRender();
@@ -80,7 +73,7 @@
             saveAndRender();
         }
 
-        // Funções para Subtarefa
+        // --- FUNÇÕES DE NÍVEL 2: QUEST / SUBTAREFA ---
         function addSubtask(taskId, title) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -97,13 +90,21 @@
             }
         }
 
-        // Funções para Item / Sub-subtarefa
-        function addItem(taskId, subtaskId, title) {
+        // --- FUNÇÕES DE NÍVEL 3: ITEM / REQUISITO ---
+        function addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(s => s.id === subtaskId);
                 if (subtask) {
-                    subtask.items.push({ id: Date.now(), title, completed: false });
+                    const completed = hasQuantity ? (currentQty >= totalQty) : false;
+                    subtask.items.push({
+                        id: Date.now(),
+                        title,
+                        hasQuantity,
+                        currentQty: hasQuantity ? currentQty : 0,
+                        totalQty: hasQuantity ? totalQty : 1,
+                        completed
+                    });
                     saveAndRender();
                 }
             }
@@ -117,6 +118,26 @@
                     const item = subtask.items.find(i => i.id === itemId);
                     if (item) {
                         item.completed = !item.completed;
+                        if (item.hasQuantity && item.completed) {
+                            item.currentQty = item.totalQty;
+                        } else if (item.hasQuantity && !item.completed) {
+                            item.currentQty = 0;
+                        }
+                        saveAndRender();
+                    }
+                }
+            }
+        }
+
+        function updateItemQuantity(taskId, subtaskId, itemId, newQty) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(s => s.id === subtaskId);
+                if (subtask) {
+                    const item = subtask.items.find(i => i.id === itemId);
+                    if (item && item.hasQuantity) {
+                        item.currentQty = Math.max(0, Math.min(newQty, item.totalQty));
+                        item.completed = item.currentQty >= item.totalQty;
                         saveAndRender();
                     }
                 }
@@ -134,29 +155,32 @@
             }
         }
 
-        // Cálculos de Progresso
+        // --- CÁLCULOS DE PROGRESSO POR PORCENTAGEM ---
+        function getItemProgress(item) {
+            if (!item.hasQuantity) return item.completed ? 100 : 0;
+            if (item.totalQty <= 0) return 0;
+            return Math.min(100, Math.round((item.currentQty / item.totalQty) * 100));
+        }
+
         function getSubtaskProgress(subtask) {
             if (!subtask.items || subtask.items.length === 0) return 0;
-            const completed = subtask.items.filter(i => i.completed).length;
-            return Math.round((completed / subtask.items.length) * 100);
+            let totalPercent = 0;
+            subtask.items.forEach(item => {
+                totalPercent += getItemProgress(item);
+            });
+            return Math.round(totalPercent / subtask.items.length);
         }
 
         function getTaskProgress(task) {
             if (!task.subtasks || task.subtasks.length === 0) return 0;
-            let totalItems = 0;
-            let completedItems = 0;
-
-            task.subtasks.forEach(s => {
-                s.items.forEach(i => {
-                    totalItems++;
-                    if (i.completed) completedItems++;
-                });
+            let totalPercent = 0;
+            task.subtasks.forEach(sub => {
+                totalPercent += getSubtaskProgress(sub);
             });
-
-            if (totalItems === 0) return 0;
-            return Math.round((completedItems / totalItems) * 100);
+            return Math.round(totalPercent / task.subtasks.length);
         }
 
+        // --- RENDERIZAÇÃO DA TELA ---
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             container.innerHTML = '';
@@ -189,10 +213,10 @@
                         </button>
                     </div>
 
-                    <!-- Barra de Progresso Geral da Meta -->
+                    <!-- Barra de Progresso da Meta -->
                     <div class="space-y-1">
                         <div class="flex justify-between text-xs text-slate-400 font-medium">
-                            <span>Progresso Total da Meta</span>
+                            <span>Progresso</span>
                             <span>${mainProgress}%</span>
                         </div>
                         <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-700/50">
@@ -200,16 +224,14 @@
                         </div>
                     </div>
 
-                    <!-- Subtarefas -->
-                    <div class="space-y-3 pt-2">
+                    <!-- Quests / Subtarefas -->
+                    <div class="space-y-4 pt-2">
                         ${task.subtasks.map(sub => {
                             const subProgress = getSubtaskProgress(sub);
-                            const totalSubItems = sub.items.length;
-                            const completedSubItems = sub.items.filter(i => i.completed).length;
 
                             return `
                                 <div class="bg-slate-900/80 p-3.5 rounded-lg border border-slate-700/70 space-y-3">
-                                    <!-- Título da Subtarefa + Botão Excluir -->
+                                    <!-- Título da Quest -->
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
                                             <i class="fa-solid fa-angle-right text-xs text-indigo-400"></i>
@@ -220,57 +242,105 @@
                                         </button>
                                     </div>
 
-                                    <!-- Barra de Progresso da Subtarefa -->
+                                    <!-- Barra de Progresso da Quest -->
                                     <div class="space-y-1">
                                         <div class="flex justify-between text-[11px] text-slate-400">
-                                            <span>Progresso da Subtarefa</span>
-                                            <span>${subProgress}% (${completedSubItems}/${totalSubItems})</span>
+                                            <span>Progresso da Quest</span>
+                                            <span>${subProgress}%</span>
                                         </div>
                                         <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
                                             <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
                                         </div>
                                     </div>
 
-                                    <!-- Lista de Requisitos / Sub-subtarefas -->
-                                    <div class="space-y-1.5 pl-2 border-l-2 border-slate-800">
-                                        ${sub.items.map(item => `
-                                            <div class="flex items-center justify-between bg-slate-800/50 px-2.5 py-1.5 rounded border border-slate-700/30 text-xs">
-                                                <label class="flex items-center gap-2.5 cursor-pointer flex-1 select-none">
-                                                    <input type="checkbox" ${item.completed ? 'checked' : ''} 
-                                                        onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
-                                                        class="w-3.5 h-3.5 accent-emerald-500 rounded cursor-pointer">
-                                                    <span class="${item.completed ? 'line-through text-slate-500' : 'text-slate-300'}">
-                                                        ${escapeHtml(item.title)}
-                                                    </span>
-                                                </label>
-                                                <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-slate-600 hover:text-red-400 transition text-[10px]">
-                                                    <i class="fa-solid fa-xmark"></i>
-                                                </button>
-                                            </div>
-                                        `).join('')}
+                                    <!-- Lista de Itens com/sem Quantidades -->
+                                    <div class="space-y-2 pl-2 border-l-2 border-slate-800">
+                                        ${sub.items.map(item => {
+                                            const itemProg = getItemProgress(item);
+                                            return `
+                                                <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/40 text-xs space-y-2">
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <label class="flex items-center gap-2.5 cursor-pointer flex-1 select-none">
+                                                            <input type="checkbox" ${item.completed ? 'checked' : ''} 
+                                                                onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
+                                                                class="w-3.5 h-3.5 accent-emerald-500 rounded cursor-pointer">
+                                                            <span class="${item.completed ? 'line-through text-slate-500' : 'text-slate-200'} font-medium">
+                                                                ${escapeHtml(item.title)}
+                                                            </span>
+                                                        </label>
+
+                                                        ${item.hasQuantity ? `
+                                                            <div class="flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 text-slate-300 text-[11px]">
+                                                                <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
+                                                                    onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
+                                                                    class="w-12 bg-transparent text-right text-emerald-400 font-bold focus:outline-none">
+                                                                <span class="text-slate-500">/</span>
+                                                                <span>${item.totalQty}</span>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-0.5">
+                                                            <i class="fa-solid fa-xmark"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    ${item.hasQuantity ? `
+                                                        <!-- Barra de Progresso do Próprio Item -->
+                                                        <div class="space-y-0.5 pt-1">
+                                                            <div class="flex justify-between text-[10px] text-slate-400">
+                                                                <span>Progresso do Item</span>
+                                                                <span>${itemProg}% (${item.currentQty}/${item.totalQty})</span>
+                                                            </div>
+                                                            <div class="w-full bg-slate-950 rounded-full h-1 overflow-hidden">
+                                                                <div class="bg-cyan-500 h-1 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
+                                                            </div>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            `;
+                                        }).join('')}
                                     </div>
 
-                                    <!-- Formulário para adicionar item na subtarefa -->
-                                    <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="flex gap-2 pt-1">
-                                        <input type="text" placeholder="Novo item / requisito..." required
-                                            class="item-input flex-1 bg-slate-950 border border-slate-700/60 rounded px-2.5 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
-                                        <button type="submit" 
-                                            class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-[11px] font-medium transition flex items-center gap-1 border border-slate-700">
-                                            <i class="fa-solid fa-plus text-[9px]"></i> Item
-                                        </button>
+                                    <!-- Formulário para adicionar Novo Item -->
+                                    <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800 space-y-2 mt-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[11px] font-medium text-slate-400">Adicionar Item / Requisito</span>
+                                            <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300 select-none">
+                                                <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded">
+                                                Rastrear Quantidade?
+                                            </label>
+                                        </div>
+
+                                        <div class="flex gap-2 items-center">
+                                            <input type="text" placeholder="Nome do item (ex: Tainted Gem)..." required
+                                                class="item-title flex-1 bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+                                            
+                                            <div class="qty-container hidden flex items-center gap-1">
+                                                <input type="number" min="0" placeholder="Atual" value="0"
+                                                    class="item-qty-current w-12 bg-slate-900 border border-slate-700/80 rounded px-1.5 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
+                                                <span class="text-slate-500 text-xs">/</span>
+                                                <input type="number" min="1" placeholder="Total" value="10"
+                                                    class="item-qty-total w-12 bg-slate-900 border border-slate-700/80 rounded px-1.5 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
+                                            </div>
+
+                                            <button type="submit" 
+                                                class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1 rounded text-xs transition flex items-center gap-1">
+                                                <i class="fa-solid fa-plus text-[10px]"></i> Item
+                                            </button>
+                                        </div>
                                     </form>
                                 </div>
                             `;
                         }).join('')}
                     </div>
 
-                    <!-- Formulário para Nova Subtarefa -->
+                    <!-- Formulário para Nova Quest -->
                     <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-2 border-t border-slate-700/60">
-                        <input type="text" placeholder="Nova subtarefa (ex: Requisitos de Quest)..." required
+                        <input type="text" placeholder="Nova quest (ex: Requisitos de Quest)..." required
                             class="subtask-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
                         <button type="submit" 
                             class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Subtarefa
+                            <i class="fa-solid fa-plus text-[10px]"></i> Quest
                         </button>
                     </form>
                 `;
@@ -279,20 +349,34 @@
             });
         }
 
-        function handleSubtaskSubmit(e, taskId) {
-            e.preventDefault();
-            const input = e.target.querySelector('.subtask-input');
-            if (input.value.trim()) {
-                addSubtask(taskId, input.value.trim());
-                input.value = '';
+        function toggleQtyInputs(checkbox) {
+            const form = checkbox.closest('form');
+            const qtyContainer = form.querySelector('.qty-container');
+            if (checkbox.checked) {
+                qtyContainer.classList.remove('hidden');
+            } else {
+                qtyContainer.classList.add('hidden');
             }
         }
 
         function handleItemSubmit(e, taskId, subtaskId) {
             e.preventDefault();
-            const input = e.target.querySelector('.item-input');
+            const form = e.target;
+            const title = form.querySelector('.item-title').value.trim();
+            const hasQuantity = form.querySelector('.qty-toggle').checked;
+            const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
+            const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
+
+            if (title) {
+                addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty);
+            }
+        }
+
+        function handleSubtaskSubmit(e, taskId) {
+            e.preventDefault();
+            const input = e.target.querySelector('.subtask-input');
             if (input.value.trim()) {
-                addItem(taskId, subtaskId, input.value.trim());
+                addSubtask(taskId, input.value.trim());
                 input.value = '';
             }
         }
