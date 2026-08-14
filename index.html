@@ -3,969 +3,488 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>METAS NO AQW</title>
-    <!-- Tailwind CSS CDN -->
+    <title>AQW Quest Tracker</title>
+    <!-- Tailwind CSS para estilização rápida e moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* Custom Scrollbar Dark */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
     </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen py-10 px-4 antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-12">
 
-    <!-- TELA DE LOGIN / CADASTRO -->
-    <div id="auth-container" class="max-w-md mx-auto bg-zinc-900 p-8 rounded-xl border border-zinc-800 shadow-2xl space-y-6 mt-12">
-        <div class="text-center space-y-2 border-b border-zinc-800 pb-5">
-            <h2 class="text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
-                <i class="fa-solid fa-dragon text-indigo-400"></i> Metas AQW
-            </h2>
-            <p class="text-xs text-zinc-400">Gerenciador Minimalista de Progresso</p>
-        </div>
-        
-        <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault();">
-            <div>
-                <label class="text-xs text-zinc-400 font-medium">E-mail</label>
-                <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 transition">
-            </div>
-            <div>
-                <label class="text-xs text-zinc-400 font-medium">Senha (mínimo 6 caracteres)</label>
-                <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 transition">
-            </div>
-            <div class="flex gap-3 pt-2">
-                <button type="button" onclick="handleLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket text-xs"></i> Entrar
-                </button>
-                <button type="button" onclick="handleRegister()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium py-2.5 rounded-lg text-sm border border-zinc-700 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-user-plus text-xs"></i> Cadastrar
-                </button>
-            </div>
-        </form>
-        <div id="auth-error" class="text-xs text-red-400 text-center hidden bg-red-950/30 p-2.5 rounded border border-red-900/50"></div>
-    </div>
-
-    <!-- PAINEL PRINCIPAL -->
-    <div id="app-container" class="max-w-4xl mx-auto space-y-6 hidden">
-        
-        <!-- Cabeçalho Principal -->
-        <header class="flex flex-col sm:flex-row justify-between items-center bg-zinc-900 p-5 rounded-xl border border-zinc-800 shadow-md gap-4">
-            <div>
-                <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
-                    <i class="fa-solid fa-dragon text-indigo-400"></i> METAS AQW
-                </h1>
-                <p id="user-email-display" class="text-xs text-zinc-400 mt-0.5"></p>
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-amber-500 text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide text-amber-400">AQW META TRACKER</h1>
             </div>
             
-            <div class="flex items-center gap-2 flex-wrap">
-                <button onclick="exportData()" title="Exportar Backup JSON" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-2 rounded-lg border border-zinc-700 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-download text-zinc-400"></i> Exportar
-                </button>
-                <label title="Importar Backup JSON" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-2 rounded-lg border border-zinc-700 transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-upload text-zinc-400"></i> Importar
-                    <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
-                </label>
-                <button onclick="handleLogout()" class="bg-zinc-800 hover:bg-red-950/50 hover:text-red-400 text-zinc-400 text-xs px-3 py-2 rounded-lg border border-zinc-700 transition flex items-center gap-1.5 ml-2">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sair
-                </button>
-            </div>
-        </header>
-
-        <!-- DASHBOARD DE ESTATÍSTICAS + AQW RESET TIMER -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center space-y-1">
-                <p class="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Metas Totais</p>
-                <p id="stat-total-tasks" class="text-2xl font-bold text-white">0</p>
-            </div>
-            <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center space-y-1">
-                <p class="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Concluídas</p>
-                <p id="stat-completed-tasks" class="text-2xl font-bold text-emerald-400">0</p>
-            </div>
-            <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center space-y-1">
-                <p class="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Progresso Geral</p>
-                <p id="stat-overall-progress" class="text-2xl font-bold text-indigo-400">0%</p>
-            </div>
-            <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 text-center space-y-0.5 flex flex-col justify-center">
-                <p class="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider flex items-center justify-center gap-1">
-                    <i class="fa-regular fa-clock text-indigo-400"></i> AQW Server Reset
-                </p>
-                <p id="aqw-server-time" class="text-xs font-mono text-zinc-300">00:00:00 EST</p>
-                <p id="aqw-reset-timer" class="text-[10px] text-emerald-400 font-mono font-medium">in --:--:--</p>
+            <!-- Seleção de Metas Principais -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <label for="goal-select" class="text-sm font-medium text-slate-400 whitespace-nowrap">Meta Ativa:</label>
+                <select id="goal-select" class="bg-slate-800 border border-slate-700 text-amber-300 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 outline-none font-semibold cursor-pointer">
+                    <!-- Opções geradas via JS -->
+                </select>
             </div>
         </div>
+    </header>
 
-        <!-- BUSCA E FILTROS -->
-        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-            <div class="relative w-full sm:w-72">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-zinc-500"></i>
-                <input type="text" id="search-input" oninput="renderTasks()" placeholder="Buscar meta ou item..."
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition">
-            </div>
-            <div class="flex gap-1.5 w-full sm:w-auto justify-end">
-                <button onclick="setFilter('all')" id="filter-all" class="filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-indigo-600/20 text-indigo-300 border-indigo-500/40">Todas</button>
-                <button onclick="setFilter('active')" id="filter-active" class="filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200">Em Progresso</button>
-                <button onclick="setFilter('completed')" id="filter-completed" class="filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200">Concluídas</button>
-            </div>
-        </div>
-
-        <!-- Formulário para Nova Meta + Presets Rápido -->
-        <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
-            <form id="task-form" class="flex gap-2">
-                <input type="text" id="task-input" placeholder="Nova meta principal (ex: Void Highlord, Lord of Order, Valiance)..." required
-                    class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
-                    <i class="fa-solid fa-plus text-xs"></i> Criar
-                </button>
-            </form>
-
-            <div class="flex items-center gap-2 pt-2 border-t border-zinc-800">
-                <span class="text-[11px] font-medium text-zinc-400 flex items-center gap-1">
-                    <i class="fa-solid fa-bolt text-indigo-400"></i> Presets Rápidos:
-                </span>
-                <div class="flex gap-1.5 flex-wrap">
-                    <button type="button" onclick="loadPreset('vhl')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
-                        Void Highlord (VHL)
-                    </button>
-                    <button type="button" onclick="loadPreset('loo')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
-                        Lord of Order
-                    </button>
-                    <button type="button" onclick="loadPreset('valiance')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
-                        Valiance
-                    </button>
-                    <button type="button" onclick="loadPreset('ldk')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
-                        Legion DoomKnight
-                    </button>
-                    <button type="button" onclick="loadPreset('nsod')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
-                        NSoD
-                    </button>
-                    <button type="button" onclick="loadPreset('vdk')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
-                        Verus DoomKnight
-                    </button>
+    <main class="max-w-6xl mx-auto px-4 mt-6">
+        
+        <!-- Dashboard do Progresso Geral -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                <div>
+                    <h2 id="current-goal-title" class="text-2xl font-black text-slate-100 uppercase tracking-wide">
+                        Carregando...
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Acompanhe seu progresso e guia de quests</p>
                 </div>
+                <span id="overall-percentage" class="text-2xl font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
+                    0%
+                </span>
             </div>
+
+            <!-- Barra de Progresso Principal -->
+            <div class="w-full bg-slate-950 rounded-full h-4 p-0.5 border border-slate-800">
+                <div id="overall-progress-bar" class="bg-gradient-to-r from-amber-600 to-amber-400 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </section>
+
+        <!-- Lista de Quests / Subtarefas -->
+        <div id="quests-container" class="space-y-6">
+            <!-- As caixas de quests serão renderizadas aqui via JS -->
         </div>
 
-        <!-- Lista de Metas Principal -->
-        <main id="tasks-container" class="space-y-4 pb-10">
-            <div class="text-center py-16 text-zinc-500">
-                <i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-indigo-500"></i>
-                <p class="text-sm">Carregando dados...</p>
-            </div>
-        </main>
-    </div>
+        <!-- Botão de Adicionar Nova Quest/Categoria -->
+        <div class="mt-6 flex justify-end">
+            <button onclick="addNewQuestGroup()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                <i class="fa-solid fa-plus text-amber-400"></i> Adicionar Nova Seção / Quest
+            </button>
+        </div>
+    </main>
 
-    <!-- Script de Integração (Firebase) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyC5JO0TndQiMREXKEMzXE3h3UuunRaVPPg",
-            authDomain: "metas-aqw.firebaseapp.com",
-            projectId: "metas-aqw",
-            storageBucket: "metas-aqw.firebasestorage.app",
-            messagingSenderId: "366374848500",
-            appId: "1:366374848500:web:cd313a2b95e344bedddba1",
-            measurementId: "G-W5DNRL8REZ"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let currentUser = null;
-        let tasks = [];
-        let currentFilter = 'all';
-
-        // 📚 BANCO DE DADOS INTELIGENTE DE CLASSES E ITEMS AQW
-        const aqwDatabase = {
-            "void highlord": {
-                title: "Void Highlord (VHL)",
-                subtasks: [
-                    {
-                        title: "Void Highlord's Challenge (/join tercessuinotlim)",
-                        items: [
-                            { title: "Roentgenium of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false },
-                            { title: "Elder's Blood (Daily in /join arcangrove)", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: true, completed: false },
-                            { title: "Voucher of Nulgath (non-mem)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Black Knight Orb", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false }
-                        ]
-                    },
-                    {
-                        title: "Cristais do Void (/join tercessuinotlim)",
-                        items: [
-                            { title: "Void Crystal A", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Void Crystal B", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
+    <!-- JS Principal -->
+    <script>
+        // Database Inicial das Metas com as Informações de Local, NPC e Quest
+        const defaultDatabase = {
             "vhl": {
                 title: "Void Highlord (VHL)",
                 subtasks: [
                     {
+                        id: "vhl_challenge",
                         title: "Void Highlord's Challenge (/join tercessuinotlim)",
                         items: [
-                            { title: "Roentgenium of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false },
-                            { title: "Elder's Blood (Daily in /join arcangrove)", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: true, completed: false },
-                            { title: "Voucher of Nulgath (non-mem)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Black Knight Orb", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false }
+                            { 
+                                id: "roent", 
+                                title: "Roentgenium of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Void Highlord's Challenge",
+                                questName: "Void Highlord's Challenge Quest"
+                            },
+                            { 
+                                id: "eblood", 
+                                title: "Elder's Blood", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: true, 
+                                completed: false,
+                                location: "/join arcangrove",
+                                npc: "Reens",
+                                questName: "Gorillaphant Blood (Daily)"
+                            },
+                            { 
+                                id: "voucher_nonmem", 
+                                title: "Voucher of Nulgath (non-mem)", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 1, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Supplies to spin the Wheel of Chance / Nulgath Challenge"
+                            },
+                            { 
+                                id: "bk_orb", 
+                                title: "Black Knight Orb", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join badlands",
+                                npc: "Gravelyn / Black Knight Quest",
+                                questName: "Black Knight Orb Quest"
+                            }
                         ]
                     },
                     {
-                        title: "Cristais do Void (/join tercessuinotlim)",
+                        id: "v crystal_a",
+                        title: "Void Crystal A (Reagentes de Troca)",
                         items: [
-                            { title: "Void Crystal A", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Void Crystal B", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
+                            { 
+                                id: "uni10", 
+                                title: "Unidentified 10", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Bamboozle",
+                                questName: "Nulgath (Supplies to spin the Wheel) / Swindle Bilk"
+                            },
+                            { 
+                                id: "gem_nulgath", 
+                                title: "Gem of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 150, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Larvae",
+                                questName: "Voucher Item: Gem of Nulgath / Nulgath Larvae"
+                            },
+                            { 
+                                id: "dcs", 
+                                title: "Dark Crystal Shard", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Essence of Nulgath / Swindle Return Policy"
+                            },
+                            { 
+                                id: "tainted_gem", 
+                                title: "Tainted Gem", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Swindle",
+                                questName: "Cube Reagents / Swindle Bilk Quests"
+                            }
                         ]
-                    }
-                ]
-            },
-            "lord of order": {
-                title: "Lord of Order (LoO)",
-                subtasks: [
+                    },
                     {
-                        title: "Saga & Quests Diárias (/join battleoff)",
+                        id: "v_crystal_b",
+                        title: "Void Crystal B (Reagentes de Troca)",
                         items: [
-                            { title: "Heart of Order (Daily - /join ultraezrajal)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: true, completed: false },
-                            { title: "Complete as 10 Quests do LoO", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: true, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "loo": {
-                title: "Lord of Order (LoO)",
-                subtasks: [
-                    {
-                        title: "Saga & Quests Diárias (/join battleoff)",
-                        items: [
-                            { title: "Heart of Order (Daily - /join ultraezrajal)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: true, completed: false },
-                            { title: "Complete as 10 Quests do LoO", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: true, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "verus doomknight": {
-                title: "Verus DoomKnight",
-                subtasks: [
-                    {
-                        title: "Requisitos de Farm (/join terminafang)",
-                        items: [
-                            { title: "Doom-Blade Specimen (Daily)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: true, completed: false },
-                            { title: "Essência da Escuridão", hasQuantity: true, currentQty: 0, totalQty: 50, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "vdk": {
-                title: "Verus DoomKnight",
-                subtasks: [
-                    {
-                        title: "Requisitos de Farm (/join terminafang)",
-                        items: [
-                            { title: "Doom-Blade Specimen (Daily)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: true, completed: false },
-                            { title: "Essência da Escuridão", hasQuantity: true, currentQty: 0, totalQty: 50, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "forge valiance": {
-                title: "Forge Enhancement - Valiance",
-                subtasks: [
-                    {
-                        title: "Requisitos do Forge (/join museum)",
-                        items: [
-                            { title: "Fire Awe / Ice Awe / Dark Awe", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "BLoD Completo", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Lord of Order Class", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "valiance": {
-                title: "Forge Enhancement - Valiance",
-                subtasks: [
-                    {
-                        title: "Requisitos do Forge (/join museum)",
-                        items: [
-                            { title: "Fire Awe / Ice Awe / Dark Awe", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "BLoD Completo", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Lord of Order Class", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "scarlet sorceress": {
-                title: "Scarlet Sorceress (Filipe /join towerofdoom)",
-                subtasks: [
-                    {
-                        title: "Farm & Requisitos",
-                        items: [
-                            { title: "Rank 10 TowerofDoom", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
-                            { title: "Blood Sorceress Class", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "legion doomknight": {
-                title: "Legion DoomKnight",
-                subtasks: [
-                    {
-                        title: "Requisitos Legion (/join legionarena)",
-                        items: [
-                            { title: "Legion Token", hasQuantity: true, currentQty: 0, totalQty: 2000, isDaily: false, completed: false },
-                            { title: "Dark Token", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "ldk": {
-                title: "Legion DoomKnight",
-                subtasks: [
-                    {
-                        title: "Requisitos Legion (/join legionarena)",
-                        items: [
-                            { title: "Legion Token", hasQuantity: true, currentQty: 0, totalQty: 2000, isDaily: false, completed: false },
-                            { title: "Dark Token", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "nsod": {
-                title: "Necrotic Sword of Doom (NSoD)",
-                subtasks: [
-                    {
-                        title: "Reagentes Principais (/join shadowfall)",
-                        items: [
-                            { title: "Void Aura", hasQuantity: true, currentQty: 0, totalQty: 7500, isDaily: false, completed: false },
-                            { title: "Cavern Celestite", hasQuantity: true, currentQty: 0, totalQty: 1600, isDaily: false, completed: false },
-                            { title: "Barium of MineCrafting (Daily)", hasQuantity: true, currentQty: 0, totalQty: 4, isDaily: true, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "necrotic sword of doom": {
-                title: "Necrotic Sword of Doom (NSoD)",
-                subtasks: [
-                    {
-                        title: "Reagentes Principais (/join shadowfall)",
-                        items: [
-                            { title: "Void Aura", hasQuantity: true, currentQty: 0, totalQty: 7500, isDaily: false, completed: false },
-                            { title: "Cavern Celestite", hasQuantity: true, currentQty: 0, totalQty: 1600, isDaily: false, completed: false },
-                            { title: "Barium of MineCrafting (Daily)", hasQuantity: true, currentQty: 0, totalQty: 4, isDaily: true, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "archfiend": {
-                title: "ArchFiend",
-                subtasks: [
-                    {
-                        title: "Reagentes de Fiend",
-                        items: [
-                            { title: "Fiend Token", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false },
-                            { title: "Diamond of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Blood Gem of the Archfiend", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "archmage": {
-                title: "ArchMage",
-                subtasks: [
-                    {
-                        title: "Unbound Essences & Books",
-                        items: [
-                            { title: "Unbound Thread", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false },
-                            { title: "Book of Arcana", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Elemental Ink", hasQuantity: true, currentQty: 0, totalQty: 1000, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "stone crusher": {
-                title: "StoneCrusher",
-                subtasks: [
-                    {
-                        title: "Reputações Necessárias",
-                        items: [
-                            { title: "Rank 10 Mythsong", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
-                            { title: "Rank 10 Brightoak", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
-                            { title: "Rank 10 Arcangrove", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "arch paladin": {
-                title: "ArchPaladin",
-                subtasks: [
-                    {
-                        title: "Proof of Goodness & Bosses",
-                        items: [
-                            { title: "Proof of Goodness", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Sacred Token", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Paladin Class (Rank 10)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
+                            { 
+                                id: "diamond_nulgath", 
+                                title: "Diamond of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 200, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Supplies to spin the Wheel / Diamond Exchange"
+                            },
+                            { 
+                                id: "blood_gem", 
+                                title: "Blood Gem of the Archfiend", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 30, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath / Tendurr",
+                                questName: "Kiss the Void / Bloody Chaos"
+                            },
+                            { 
+                                id: "emblem_nulgath", 
+                                title: "Emblem of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 20, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join shadowblast",
+                                npc: "Nation Recruiter",
+                                questName: "Deend of Valor Quest"
+                            },
+                            { 
+                                id: "totem_nulgath", 
+                                title: "Totem of Nulgath", 
+                                hasQuantity: true, 
+                                currentQty: 0, 
+                                totalQty: 15, 
+                                isDaily: false, 
+                                completed: false,
+                                location: "/join tercessuinotlim",
+                                npc: "Nulgath",
+                                questName: "Essence of Nulgath (100 Essences -> 1 Totem)"
+                            }
                         ]
                     }
                 ]
             }
         };
 
-        // ⏱️ RELÓGIO SERVIDOR AQW (EST)
-        function updateAQWServerTime() {
-            const now = new Date();
-            const estTimeStr = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: false });
-            document.getElementById('aqw-server-time').innerText = `${estTimeStr} EST`;
+        // Estado da Aplicação
+        let aqwData = JSON.parse(localStorage.getItem('aqw_tracker_data')) || defaultDatabase;
+        let currentGoalKey = localStorage.getItem('aqw_current_goal') || 'vhl';
 
-            const estDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-            const estNow = new Date(`${estDateStr} ${estTimeStr}`);
-            const estReset = new Date(`${estDateStr} 24:00:00`);
-            let diffMs = estReset - estNow;
-
-            const hours = Math.floor(diffMs / (1000 * 60 * 60)).toString().padStart(2, '0');
-            const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-            const secs = Math.floor((diffMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-
-            document.getElementById('aqw-reset-timer').innerText = `Reset em ${hours}:${mins}:${secs}`;
-        }
-        setInterval(updateAQWServerTime, 1000);
-        updateAQWServerTime();
-
-        onAuthStateChanged(auth, async (user) => {
-            const authContainer = document.getElementById('auth-container');
-            const appContainer = document.getElementById('app-container');
-            const emailDisplay = document.getElementById('user-email-display');
-
-            if (user) {
-                currentUser = user;
-                authContainer.classList.add('hidden');
-                appContainer.classList.remove('hidden');
-                emailDisplay.innerText = user.email;
-                await loadUserTasks();
-            } else {
-                currentUser = null;
-                authContainer.classList.remove('hidden');
-                appContainer.classList.add('hidden');
-                tasks = [];
-                document.getElementById('tasks-container').innerHTML = '';
-            }
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGoalSelect();
+            renderActiveGoal();
         });
 
-        window.handleLogin = async () => {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            errDiv.classList.add('hidden');
+        // Salvar dados no LocalStorage
+        function saveData() {
+            localStorage.setItem('aqw_tracker_data', JSON.stringify(aqwData));
+            localStorage.setItem('aqw_current_goal', currentGoalKey);
+            renderActiveGoal();
+        }
 
-            if (!email || !password) {
-                errDiv.innerText = "Preencha e-mail e senha.";
-                errDiv.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                console.error(err);
-                errDiv.innerText = "Erro ao entrar: Verifique e-mail/senha ou cadastre-se.";
-                errDiv.classList.remove('hidden');
-            }
-        };
-
-        window.handleRegister = async () => {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            errDiv.classList.add('hidden');
-
-            if (!email || password.length < 6) {
-                errDiv.innerText = "E-mail inválido ou senha com menos de 6 caracteres.";
-                errDiv.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                console.error(err);
-                errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
-                errDiv.classList.remove('hidden');
-            }
-        };
-
-        window.handleLogout = () => signOut(auth);
-
-        async function loadUserTasks() {
-            if (!currentUser) return;
-            const container = document.getElementById('tasks-container');
+        // Renderiza o select do topo
+        function renderGoalSelect() {
+            const select = document.getElementById('goal-select');
+            select.innerHTML = '';
             
-            try {
-                const docRef = doc(db, "users", currentUser.uid);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    tasks = docSnap.data().tasks || [];
-                } else {
-                    tasks = [];
-                    await setDoc(docRef, { tasks: [] });
-                }
-                renderTasks();
-            } catch (err) {
-                console.error("Erro ao carregar dados:", err);
-                container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados da nuvem.</div>`;
-            }
-        }
-
-        async function saveAndRender() {
-            renderTasks();
-            if (!currentUser) return;
-            try {
-                const docRef = doc(db, "users", currentUser.uid);
-                await setDoc(docRef, { tasks: tasks }, { merge: true });
-            } catch (err) {
-                console.error("Erro ao salvar:", err);
-            }
-        }
-
-        window.setFilter = function(filter) {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200";
+            Object.keys(aqwData).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = aqwData[key].title;
+                if(key === currentGoalKey) opt.selected = true;
+                select.appendChild(opt);
             });
-            const activeBtn = document.getElementById(`filter-${filter}`);
-            if (activeBtn) activeBtn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-indigo-600/20 text-indigo-300 border-indigo-500/40";
-            renderTasks();
-        };
 
-        window.editTaskTitle = function(taskId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (!task) return;
-            const newTitle = prompt("Edite o título da meta principal:", task.title);
-            if (newTitle !== null && newTitle.trim() !== "") {
-                task.title = newTitle.trim();
-                saveAndRender();
-            }
-        };
-
-        window.editSubtaskTitle = function(taskId, subtaskId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (!task) return;
-            const sub = task.subtasks.find(s => s.id === subtaskId);
-            if (!sub) return;
-            const newTitle = prompt("Edite o título da quest:", sub.title);
-            if (newTitle !== null && newTitle.trim() !== "") {
-                sub.title = newTitle.trim();
-                saveAndRender();
-            }
-        };
-
-        window.addTask = function(title) {
-            const key = title.trim().toLowerCase();
-
-            if (aqwDatabase[key]) {
-                const preset = aqwDatabase[key];
-                tasks.push({
-                    id: Date.now(),
-                    title: preset.title,
-                    subtasks: preset.subtasks.map((sub, sIdx) => ({
-                        id: Date.now() + sIdx + 1,
-                        title: sub.title,
-                        items: sub.items.map((item, iIdx) => ({
-                            ...item,
-                            id: Date.now() + (sIdx * 10) + iIdx + 100
-                        }))
-                    }))
-                });
-            } else {
-                tasks.push({ id: Date.now(), title: title.trim(), subtasks: [] });
-            }
-            saveAndRender();
-        };
-
-        window.deleteTask = function(id) {
-            if(confirm("Tem certeza que deseja excluir esta meta?")) {
-                tasks = tasks.filter(t => t.id !== id);
-                saveAndRender();
-            }
-        };
-
-        window.addSubtask = function(taskId, title) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.subtasks.push({ id: Date.now(), title, items: [] });
-                saveAndRender();
-            }
-        };
-
-        window.deleteSubtask = function(taskId, subtaskId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
-                saveAndRender();
-            }
-        };
-
-        window.addItem = function(taskId, subtaskId, title, hasQuantity, currentQty, totalQty, isDaily = false) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    const completed = hasQuantity ? (currentQty >= totalQty) : false;
-                    subtask.items.push({
-                        id: Date.now(), title, hasQuantity, isDaily,
-                        currentQty: hasQuantity ? currentQty : 0,
-                        totalQty: hasQuantity ? totalQty : 1, completed
-                    });
-                    saveAndRender();
-                }
-            }
-        };
-
-        window.toggleItem = function(taskId, subtaskId, itemId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    const item = subtask.items.find(i => i.id === itemId);
-                    if (item) {
-                        item.completed = !item.completed;
-                        if (item.hasQuantity) item.currentQty = item.completed ? item.totalQty : 0;
-                        saveAndRender();
-                    }
-                }
-            }
-        };
-
-        window.updateItemQuantity = function(taskId, subtaskId, itemId, newQty) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    const item = subtask.items.find(i => i.id === itemId);
-                    if (item && item.hasQuantity) {
-                        item.currentQty = Math.max(0, Math.min(newQty, item.totalQty));
-                        item.completed = item.currentQty >= item.totalQty;
-                        saveAndRender();
-                    }
-                }
-            }
-        };
-
-        window.deleteItem = function(taskId, subtaskId, itemId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    subtask.items = subtask.items.filter(i => i.id !== itemId);
-                    saveAndRender();
-                }
-            }
-        };
-
-        window.loadPreset = function(presetKey) {
-            addTask(presetKey);
-        };
-
-        window.exportData = function() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `metas-aqw-backup-${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        };
-
-        window.importData = function(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
-                try {
-                    const importedTasks = JSON.parse(e.target.result);
-                    if (Array.isArray(importedTasks)) {
-                        tasks = importedTasks;
-                        saveAndRender();
-                        alert("Backup importado com sucesso!");
-                    } else {
-                        alert("Arquivo JSON inválido.");
-                    }
-                } catch(err) {
-                    alert("Erro ao ler o arquivo JSON.");
-                }
+            select.onchange = (e) => {
+                currentGoalKey = e.target.value;
+                saveData();
             };
-            if (event.target.files[0]) {
-                fileReader.readAsText(event.target.files[0]);
-            }
-        };
-
-        function getItemProgress(item) {
-            if (!item.hasQuantity) return item.completed ? 100 : 0;
-            if (item.totalQty <= 0) return 0;
-            return Math.min(100, Math.round((item.currentQty / item.totalQty) * 100));
         }
 
-        function getSubtaskProgress(subtask) {
-            if (!subtask.items || subtask.items.length === 0) return 0;
-            let totalPercent = 0;
-            subtask.items.forEach(item => totalPercent += getItemProgress(item));
-            return Math.round(totalPercent / subtask.items.length);
-        }
+        // Renderiza a meta ativa e suas subtarefas
+        function renderActiveGoal() {
+            const goal = aqwData[currentGoalKey];
+            if (!goal) return;
 
-        function getTaskProgress(task) {
-            if (!task.subtasks || task.subtasks.length === 0) return 0;
-            let totalPercent = 0;
-            task.subtasks.forEach(sub => totalPercent += getSubtaskProgress(sub));
-            return Math.round(totalPercent / task.subtasks.length);
-        }
-
-        function updateStats() {
-            const totalTasks = tasks.length;
-            let completedTasks = 0;
-            let totalProgressSum = 0;
-
-            tasks.forEach(task => {
-                const prog = getTaskProgress(task);
-                totalProgressSum += prog;
-                if (prog === 100 && task.subtasks.length > 0) completedTasks++;
-            });
-
-            const overallProgress = totalTasks > 0 ? Math.round(totalProgressSum / totalTasks) : 0;
-
-            document.getElementById('stat-total-tasks').innerText = totalTasks;
-            document.getElementById('stat-completed-tasks').innerText = completedTasks;
-            document.getElementById('stat-overall-progress').innerText = `${overallProgress}%`;
-        }
-
-        window.renderTasks = function() {
-            updateStats();
-            const container = document.getElementById('tasks-container');
-            const searchQuery = (document.getElementById('search-input')?.value || '').toLowerCase();
+            document.getElementById('current-goal-title').textContent = goal.title;
+            const container = document.getElementById('quests-container');
             container.innerHTML = '';
 
-            let filteredTasks = tasks.filter(task => {
-                const matchesSearch = task.title.toLowerCase().includes(searchQuery) ||
-                    task.subtasks.some(s => s.title.toLowerCase().includes(searchQuery) || 
-                    s.items.some(i => i.title.toLowerCase().includes(searchQuery)));
-                const prog = getTaskProgress(task);
-                const isCompleted = prog === 100 && task.subtasks.length > 0;
+            let totalItemsCount = 0;
+            let completedItemsCount = 0;
 
-                if (currentFilter === 'active') return matchesSearch && !isCompleted;
-                if (currentFilter === 'completed') return matchesSearch && isCompleted;
-                return matchesSearch;
-            });
+            goal.subtasks.forEach((subtask, sIdx) => {
+                const subtaskCard = document.createElement('div');
+                subtaskCard.className = "bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg";
 
-            if (filteredTasks.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800 border-dashed text-zinc-500">
-                        <i class="fa-solid fa-inbox text-3xl mb-2 text-zinc-600"></i>
-                        <p class="text-xs text-zinc-400 font-medium">Nenhuma meta encontrada.</p>
-                    </div>`;
-                return;
-            }
+                // Cálculo do progresso da Subtarefa
+                let subTotal = subtask.items.length;
+                let subDone = 0;
 
-            filteredTasks.forEach(task => {
-                const mainProgress = getTaskProgress(task);
-                const isMastered = mainProgress === 100 && task.subtasks.length > 0;
-                const card = document.createElement('div');
-                card.className = `bg-zinc-900 rounded-xl border ${isMastered ? 'border-emerald-500/40' : 'border-zinc-800'} p-5 shadow-sm space-y-4 transition`;
+                subtask.items.forEach(item => {
+                    totalItemsCount++;
+                    if (item.hasQuantity) {
+                        if (item.currentQty >= item.totalQty) subDone++;
+                    } else {
+                        if (item.completed) subDone++;
+                    }
+                });
 
-                card.innerHTML = `
-                    <!-- Título Principal -->
-                    <div class="flex items-center justify-between gap-3 border-b border-zinc-800 pb-3">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-flag ${isMastered ? 'text-emerald-400' : 'text-indigo-400'} text-sm"></i>
-                            <h2 class="font-semibold text-base text-zinc-100 flex items-center gap-2">
-                                ${escapeHtml(task.title)}
-                                <button onclick="editTaskTitle(${task.id})" class="text-zinc-500 hover:text-zinc-300 text-xs transition" title="Editar Título">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                            </h2>
-                            ${isMastered ? '<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-500/20">CONCLUÍDO</span>' : ''}
+                completedItemsCount += subDone;
+                const subPerc = subTotal > 0 ? Math.round((subDone / subTotal) * 100) : 0;
+
+                // Header da Subtarefa
+                subtaskCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-amber-500"></i> ${subtask.title}
+                        </h3>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-semibold text-slate-400">${subPerc}%</span>
+                            <button onclick="deleteSubtask(${sIdx})" class="text-slate-500 hover:text-red-400 text-sm transition" title="Excluir Seção">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
-                        <button onclick="deleteTask(${task.id})" class="text-zinc-500 hover:text-red-400 transition text-xs p-1 rounded" title="Excluir meta">
-                            <i class="fa-regular fa-trash-can"></i>
+                    </div>
+
+                    <!-- Progresso da Seção -->
+                    <div class="w-full bg-slate-950 rounded-full h-2 mb-4 border border-slate-800">
+                        <div class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subPerc}%"></div>
+                    </div>
+
+                    <!-- Itens da Seção -->
+                    <div class="space-y-3">
+                        ${subtask.items.map((item, iIdx) => renderItemHTML(sIdx, iIdx, item)).join('')}
+                    </div>
+
+                    <!-- Formulário para adicionar novos itens -->
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap gap-2 items-center">
+                        <input type="text" id="new-item-title-${sIdx}" placeholder="Nome do item..." class="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 flex-1">
+                        <input type="text" id="new-item-loc-${sIdx}" placeholder="/join mapa" class="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 w-28">
+                        <input type="text" id="new-item-npc-${sIdx}" placeholder="NPC" class="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 w-24">
+                        <button onclick="addItemToSubtask(${sIdx})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded text-xs font-semibold transition">
+                            + Add Item
                         </button>
                     </div>
-
-                    <!-- Progresso Geral da Meta -->
-                    <div class="space-y-1 bg-zinc-950 p-3 rounded-lg border border-zinc-800/80">
-                        <div class="flex justify-between text-xs font-medium">
-                            <span class="text-zinc-400">Progresso da Meta</span>
-                            <span class="${isMastered ? 'text-emerald-400' : 'text-indigo-400'} font-semibold">${mainProgress}%</span>
-                        </div>
-                        <div class="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-800">
-                            <div class="${isMastered ? 'bg-emerald-500' : 'bg-indigo-500'} h-2 rounded-full transition-all duration-300" style="width: ${mainProgress}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Quests -->
-                    <div class="space-y-3 pt-1">
-                        ${task.subtasks.map(sub => {
-                            const subProgress = getSubtaskProgress(sub);
-                            return `
-                                <div class="bg-zinc-950/60 p-3.5 rounded-lg border border-zinc-800/80 space-y-3">
-                                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-                                        <span class="text-xs font-medium text-zinc-200 flex items-center gap-1.5">
-                                            <i class="fa-solid fa-list-ul text-[10px] text-indigo-400"></i>
-                                            ${escapeHtml(sub.title)}
-                                            <button onclick="editSubtaskTitle(${task.id}, ${sub.id})" class="text-zinc-500 hover:text-zinc-300 text-xs transition" title="Editar Quest">
-                                                <i class="fa-solid fa-pen-to-square"></i>
-                                            </button>
-                                        </span>
-                                        <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-zinc-500 hover:text-red-400 transition text-xs">
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-[10px] text-zinc-400">
-                                            <span>Sub-progresso</span>
-                                            <span class="text-emerald-400 font-semibold">${subProgress}%</span>
-                                        </div>
-                                        <div class="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden border border-zinc-800">
-                                            <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Itens -->
-                                    <div class="space-y-1.5 pl-2 border-l border-zinc-800">
-                                        ${sub.items.map(item => {
-                                            const itemProg = getItemProgress(item);
-                                            const wikiUrl = `https://aqwwiki.wikidot.com/search:main/q/${encodeURIComponent(item.title)}`;
-                                            return `
-                                                <div class="bg-zinc-900/90 p-2.5 rounded border border-zinc-800/80 text-xs space-y-1.5 hover:border-zinc-700 transition">
-                                                    <div class="flex items-center justify-between gap-2">
-                                                        <label class="flex items-center gap-2 cursor-pointer flex-1 select-none">
-                                                            <input type="checkbox" ${item.completed ? 'checked' : ''} 
-                                                                onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
-                                                                class="w-3.5 h-3.5 accent-indigo-500 rounded cursor-pointer bg-zinc-950 border-zinc-700">
-                                                            <span class="${item.completed ? 'line-through text-zinc-500' : 'text-zinc-200'} font-medium flex-1">
-                                                                ${escapeHtml(item.title)}
-                                                            </span>
-                                                        </label>
-
-                                                        ${item.isDaily ? `
-                                                            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-1" title="Daily Quest">
-                                                                <i class="fa-regular fa-calendar text-[8px]"></i> DAILY
-                                                            </span>
-                                                        ` : ''}
-
-                                                        <a href="${wikiUrl}" target="_blank" title="Buscar na AQW Wiki" class="text-zinc-500 hover:text-indigo-400 transition text-xs p-1">
-                                                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                                                        </a>
-
-                                                        ${item.hasQuantity ? `
-                                                            <div class="flex items-center gap-1 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 text-[11px]">
-                                                                <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
-                                                                    onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
-                                                                    class="w-10 bg-transparent text-right text-emerald-400 font-semibold focus:outline-none">
-                                                                <span class="text-zinc-600">/</span>
-                                                                <span class="text-zinc-400">${item.totalQty}</span>
-                                                            </div>
-                                                        ` : ''}
-
-                                                        <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-zinc-500 hover:text-red-400 transition text-xs p-1">
-                                                            <i class="fa-solid fa-trash-can text-[10px]"></i>
-                                                        </button>
-                                                    </div>
-
-                                                    ${item.hasQuantity ? `
-                                                        <div class="w-full bg-zinc-950 rounded-full h-1 overflow-hidden border border-zinc-800/50">
-                                                            <div class="bg-indigo-500 h-1 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
-                                                        </div>
-                                                    ` : ''}
-                                                </div>
-                                            `;
-                                        }).join('')}
-                                    </div>
-
-                                    <!-- Form Item -->
-                                    <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-zinc-900/40 p-2.5 rounded border border-zinc-800 space-y-2 mt-2">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Adicionar Item:</span>
-                                            <div class="flex items-center gap-2">
-                                                <label class="flex items-center gap-1 cursor-pointer text-[10px] text-zinc-400 select-none">
-                                                    <input type="checkbox" class="daily-toggle accent-emerald-500 rounded w-3 h-3">
-                                                    Daily?
-                                                </label>
-                                                <label class="flex items-center gap-1 cursor-pointer text-[10px] text-zinc-400 select-none">
-                                                    <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded w-3 h-3">
-                                                    Qtd?
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="flex gap-1.5 items-center">
-                                            <input type="text" placeholder="Nome do item..." required class="item-title flex-1 bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500">
-                                            <div class="qty-container hidden flex items-center gap-1 bg-zinc-950 p-0.5 rounded border border-zinc-800">
-                                                <input type="number" min="0" value="0" class="item-qty-current w-10 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-center text-zinc-100">
-                                                <span class="text-zinc-600 text-xs">/</span>
-                                                <input type="number" min="1" value="10" class="item-qty-total w-10 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-center text-zinc-100">
-                                            </div>
-                                            <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium px-2.5 py-1 rounded text-xs border border-zinc-700 transition">
-                                                Add
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-
-                    <!-- Form Quest -->
-                    <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-2 border-t border-zinc-800">
-                        <input type="text" placeholder="Nova quest..." required class="subtask-input flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition">
-                        <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-3 py-1.5 rounded-lg text-xs border border-zinc-700 transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Quest
-                        </button>
-                    </form>
                 `;
-                container.appendChild(card);
+
+                container.appendChild(subtaskCard);
             });
-        };
 
-        window.toggleQtyInputs = function(checkbox) {
-            const form = checkbox.closest('form');
-            form.querySelector('.qty-container').classList.toggle('hidden', !checkbox.checked);
-        };
+            // Atualiza progresso geral do topo
+            const overallPerc = totalItemsCount > 0 ? Math.round((completedItemsCount / totalItemsCount) * 100) : 0;
+            document.getElementById('overall-percentage').textContent = `${overallPerc}%`;
+            document.getElementById('overall-progress-bar').style.width = `${overallPerc}%`;
+        }
 
-        window.handleItemSubmit = function(e, taskId, subtaskId) {
-            e.preventDefault();
-            const form = e.target;
-            const title = form.querySelector('.item-title').value.trim();
-            const hasQuantity = form.querySelector('.qty-toggle').checked;
-            const isDaily = form.querySelector('.daily-toggle').checked;
-            const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
-            const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
-            if (title) addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty, isDaily);
-            form.reset();
-            form.querySelector('.qty-container').classList.add('hidden');
-        };
+        // Renderiza cada linha de item
+        function renderItemHTML(sIdx, iIdx, item) {
+            const isDone = item.hasQuantity ? (item.currentQty >= item.totalQty) : item.completed;
+            
+            return `
+                <div class="bg-slate-950 border ${isDone ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-slate-800'} rounded-lg p-3 transition">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        
+                        <!-- Checkbox + Título + Badges -->
+                        <div class="flex items-start gap-3 flex-1">
+                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleItemDone(${sIdx}, ${iIdx}, this.checked)" class="mt-1 w-4 h-4 rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-950 cursor-pointer">
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-medium text-sm ${isDone ? 'line-through text-slate-500' : 'text-slate-200'}">
+                                        ${item.title}
+                                    </span>
+                                    ${item.isDaily ? '<span class="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-bold">DAILY</span>' : ''}
+                                </div>
 
-        window.handleSubtaskSubmit = function(e, taskId) {
-            e.preventDefault();
-            const input = e.target.querySelector('.subtask-input');
-            if (input.value.trim()) {
-                addSubtask(taskId, input.value.trim());
-                input.value = '';
+                                <!-- GUIA RÁPIDO: Localização, NPC e Quest -->
+                                ${(item.location || item.npc || item.questName) ? `
+                                    <div class="flex flex-wrap gap-2 mt-1.5 text-[11px]">
+                                        ${item.location ? `<span class="bg-slate-900 text-amber-300 border border-slate-800 px-2 py-0.5 rounded"><i class="fa-solid fa-location-dot text-amber-500 mr-1"></i>${item.location}</span>` : ''}
+                                        ${item.npc ? `<span class="bg-slate-900 text-sky-300 border border-slate-800 px-2 py-0.5 rounded"><i class="fa-solid fa-user text-sky-400 mr-1"></i>${item.npc}</span>` : ''}
+                                        ${item.questName ? `<span class="bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 rounded"><i class="fa-solid fa-scroll text-slate-500 mr-1"></i>${item.questName}</span>` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Quantidade e Ações -->
+                        <div class="flex items-center gap-3 self-end md:self-center">
+                            ${item.hasQuantity ? `
+                                <div class="flex items-center bg-slate-900 border border-slate-800 rounded-md p-1 gap-1">
+                                    <button onclick="updateQty(${sIdx}, ${iIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-xs font-bold">-</button>
+                                    <input type="number" value="${item.currentQty}" onchange="setQtyDirect(${sIdx}, ${iIdx}, this.value)" class="w-12 bg-transparent text-center text-xs font-semibold text-amber-400 focus:outline-none">
+                                    <span class="text-xs text-slate-500">/ ${item.totalQty}</span>
+                                    <button onclick="updateQty(${sIdx}, ${iIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-xs font-bold">+</button>
+                                </div>
+                            ` : ''}
+
+                            <button onclick="deleteItem(${sIdx}, ${iIdx})" class="text-slate-600 hover:text-red-400 text-xs p-1 transition" title="Excluir Item">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funções de Manipulação do Estado
+        function toggleItemDone(sIdx, iIdx, isChecked) {
+            const item = aqwData[currentGoalKey].subtasks[sIdx].items[iIdx];
+            if(item.hasQuantity) {
+                item.currentQty = isChecked ? item.totalQty : 0;
+            } else {
+                item.completed = isChecked;
             }
-        };
+            saveData();
+        }
 
-        document.getElementById('task-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('task-input');
-            if (input.value.trim()) {
-                addTask(input.value.trim());
-                input.value = '';
+        function updateQty(sIdx, iIdx, delta) {
+            const item = aqwData[currentGoalKey].subtasks[sIdx].items[iIdx];
+            item.currentQty = Math.max(0, Math.min(item.totalQty, item.currentQty + delta));
+            saveData();
+        }
+
+        function setQtyDirect(sIdx, iIdx, val) {
+            const item = aqwData[currentGoalKey].subtasks[sIdx].items[iIdx];
+            const parsed = parseInt(val) || 0;
+            item.currentQty = Math.max(0, Math.min(item.totalQty, parsed));
+            saveData();
+        }
+
+        function deleteItem(sIdx, iIdx) {
+            aqwData[currentGoalKey].subtasks[sIdx].items.splice(iIdx, 1);
+            saveData();
+        }
+
+        function deleteSubtask(sIdx) {
+            if(confirm("Tem certeza que deseja excluir esta seção inteira?")) {
+                aqwData[currentGoalKey].subtasks.splice(sIdx, 1);
+                saveData();
             }
-        });
+        }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+        function addItemToSubtask(sIdx) {
+            const titleInput = document.getElementById(`new-item-title-${sIdx}`);
+            const locInput = document.getElementById(`new-item-loc-${sIdx}`);
+            const npcInput = document.getElementById(`new-item-npc-${sIdx}`);
+
+            if(!titleInput.value.trim()) return;
+
+            aqwData[currentGoalKey].subtasks[sIdx].items.push({
+                id: 'custom_' + Date.now(),
+                title: titleInput.value.trim(),
+                hasQuantity: false,
+                currentQty: 0,
+                totalQty: 1,
+                isDaily: false,
+                completed: false,
+                location: locInput.value.trim(),
+                npc: npcInput.value.trim(),
+                questName: ""
+            });
+
+            saveData();
+        }
+
+        function addNewQuestGroup() {
+            const title = prompt("Nome da nova seção/quest:");
+            if(title && title.trim()) {
+                aqwData[currentGoalKey].subtasks.push({
+                    id: 'group_' + Date.now(),
+                    title: title.trim(),
+                    items: []
+                });
+                saveData();
+            }
         }
     </script>
 </body>
