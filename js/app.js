@@ -1,0 +1,610 @@
+import { auth, db } from "./firebase-config.js";
+import { aqwDatabase, loadAqwDatabase } from "./database.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+let currentUser = null;
+let isGuest = false;
+let tasks = [];
+let currentFilter = 'all';
+
+function updateAQWServerTime() {
+    const now = new Date();
+    const estTimeStr = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: false });
+    const serverTimeEl = document.getElementById('aqw-server-time');
+    if (serverTimeEl) serverTimeEl.innerText = `${estTimeStr} EST`;
+
+    const estDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+    const estNow = new Date(`${estDateStr} ${estTimeStr}`);
+    const estReset = new Date(`${estDateStr} 24:00:00`);
+    let diffMs = estReset - estNow;
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+    const secs = Math.floor((diffMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+    const resetTimerEl = document.getElementById('aqw-reset-timer');
+    if (resetTimerEl) resetTimerEl.innerText = `in ${hours}:${mins}:${secs}`;
+}
+setInterval(updateAQWServerTime, 1000);
+updateAQWServerTime();
+
+onAuthStateChanged(auth, async (user) => {
+    if (user && !isGuest) {
+        currentUser = user;
+        showApp(user.email);
+    } else if (!isGuest) {
+        showAuth();
+    }
+});
+
+window.handleGuestLogin = async () => {
+    isGuest = true;
+    currentUser = { uid: 'guest-local-user' };
+    showApp('Modo Convidado (Local)');
+};
+
+function showApp(identifier) {
+    document.getElementById('auth-container').classList.add('hidden');
+    document.getElementById('app-container').classList.remove('hidden');
+    document.getElementById('user-email-display').innerText = identifier;
+    loadAqwDatabase().then(() => loadUserTasks());
+}
+
+function showAuth() {
+    document.getElementById('auth-container').classList.remove('hidden');
+    document.getElementById('app-container').classList.add('hidden');
+    tasks = [];
+    document.getElementById('tasks-container').innerHTML = '';
+}
+
+window.handleLogin = async () => {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    const errDiv = document.getElementById('auth-error');
+    errDiv.classList.add('hidden');
+
+    if (!email || !password) {
+        errDiv.innerText = "Preencha e-mail e senha.";
+        errDiv.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        isGuest = false;
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+        errDiv.innerText = "Erro ao entrar: Verifique e-mail/senha ou cadastre-se.";
+        errDiv.classList.remove('hidden');
+    }
+};
+
+window.handleRegister = async () => {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    const errDiv = document.getElementById('auth-error');
+    errDiv.classList.add('hidden');
+
+    if (!email || password.length < 6) {
+        errDiv.innerText = "E-mail inválido ou senha com menos de 6 caracteres.";
+        errDiv.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        isGuest = false;
+        await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+        errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
+        errDiv.classList.remove('hidden');
+    }
+};
+
+window.handleLogout = () => {
+    isGuest = false;
+    signOut(auth);
+    showAuth();
+};
+
+async function loadUserTasks() {
+    const container = document.getElementById('tasks-container');
+    try {
+        if (isGuest) {
+            const localData = localStorage.getItem('aqw_guest_tasks');
+            tasks = localData ? JSON.parse(localData) : [];
+        } else if (currentUser) {
+            const docRef = doc(db, "users", currentUser.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                tasks = docSnap.data().tasks || [];
+            } else {
+                tasks = [];
+                await setDoc(docRef, { tasks: [] });
+            }
+        }
+        renderTasks();
+    } catch (err) {
+        container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados.</div>`;
+    }
+}
+
+async function saveAndRender() {
+    renderTasks();
+    try {
+        if (isGuest) {
+            localStorage.setItem('aqw_guest_tasks', JSON.stringify(tasks));
+        } else if (currentUser) {
+            const docRef = doc(db, "users", currentUser.uid);
+            await setDoc(docRef, { tasks: tasks }, { merge: true });
+        }
+    } catch (err) {
+        console.error("Erro ao salvar:", err);
+    }
+}
+
+window.setFilter = function(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200";
+    });
+    const activeBtn = document.getElementById(`filter-${filter}`);
+    if (activeBtn) activeBtn.className = "filter-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition bg-indigo-600/20 text-indigo-300 border-indigo-500/40";
+    renderTasks();
+};
+
+window.editTaskTitle = function(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newTitle = prompt("Edite o título da meta principal:", task.title);
+    if (newTitle !== null && newTitle.trim() !== "") {
+        task.title = newTitle.trim();
+        saveAndRender();
+    }
+};
+
+window.editSubtaskTitle = function(taskId, subtaskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const sub = task.subtasks.find(s => s.id === subtaskId);
+    if (!sub) return;
+    const newTitle = prompt("Edite o título do passo:", sub.title);
+    if (newTitle !== null && newTitle.trim() !== "") {
+        sub.title = newTitle.trim();
+        saveAndRender();
+    }
+};
+
+window.addTask = function(title) {
+    const key = title.trim().toLowerCase();
+
+    if (aqwDatabase[key]) {
+        const preset = aqwDatabase[key];
+        tasks.push({
+            id: Date.now(),
+            title: preset.title,
+            subtasks: preset.subtasks.map((sub, sIdx) => ({
+                id: Date.now() + sIdx + 1,
+                title: sub.title,
+                items: sub.items.map((item, iIdx) => ({
+                    ...item,
+                    id: Date.now() + (sIdx * 10) + iIdx + 100
+                }))
+            }))
+        });
+    } else {
+        tasks.push({ id: Date.now(), title: title.trim(), subtasks: [] });
+    }
+    saveAndRender();
+};
+
+window.deleteTask = function(id) {
+    if(confirm("Tem certeza que deseja excluir esta meta?")) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveAndRender();
+    }
+};
+
+window.addSubtask = function(taskId, title) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.subtasks.push({ id: Date.now(), title, items: [] });
+        saveAndRender();
+    }
+};
+
+window.deleteSubtask = function(taskId, subtaskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+        saveAndRender();
+    }
+};
+
+window.addItem = function(taskId, subtaskId, title, hasQuantity, currentQty, totalQty, isDaily = false) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        const subtask = task.subtasks.find(s => s.id === subtaskId);
+        if (subtask) {
+            const completed = hasQuantity ? (currentQty >= totalQty) : false;
+            subtask.items.push({
+                id: Date.now(), title, hasQuantity, isDaily,
+                currentQty: hasQuantity ? currentQty : 0,
+                totalQty: hasQuantity ? totalQty : 1, completed
+            });
+            saveAndRender();
+        }
+    }
+};
+
+window.toggleItem = function(taskId, subtaskId, itemId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        const subtask = task.subtasks.find(s => s.id === subtaskId);
+        if (subtask) {
+            const item = subtask.items.find(i => i.id === itemId);
+            if (item) {
+                item.completed = !item.completed;
+                if (item.hasQuantity) item.currentQty = item.completed ? item.totalQty : 0;
+                saveAndRender();
+            }
+        }
+    }
+};
+
+window.updateItemQuantity = function(taskId, subtaskId, itemId, newQty) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        const subtask = task.subtasks.find(s => s.id === subtaskId);
+        if (subtask) {
+            const item = subtask.items.find(i => i.id === itemId);
+            if (item && item.hasQuantity) {
+                item.currentQty = Math.max(0, Math.min(newQty, item.totalQty));
+                item.completed = item.currentQty >= item.totalQty;
+                saveAndRender();
+            }
+        }
+    }
+};
+
+window.adjustQuantity = function(taskId, subtaskId, itemId, amount) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const subtask = task.subtasks.find(s => s.id === subtaskId);
+    if (!subtask) return;
+    const item = subtask.items.find(i => i.id === itemId);
+    if (!item || !item.hasQuantity) return;
+
+    if (amount === 'max') {
+        item.currentQty = item.totalQty;
+    } else {
+        item.currentQty = Math.max(0, Math.min(item.currentQty + amount, item.totalQty));
+    }
+    item.completed = item.currentQty >= item.totalQty;
+    saveAndRender();
+};
+
+window.deleteItem = function(taskId, subtaskId, itemId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        const subtask = task.subtasks.find(s => s.id === subtaskId);
+        if (subtask) {
+            subtask.items = subtask.items.filter(i => i.id !== itemId);
+            saveAndRender();
+        }
+    }
+};
+
+window.resetDailies = function() {
+    if (!confirm("Deseja resetar o progresso de todas as missões marcadas como Daily?")) return;
+    tasks.forEach(task => {
+        task.subtasks.forEach(sub => {
+            sub.items.forEach(item => {
+                if (item.isDaily) {
+                    item.currentQty = 0;
+                    item.completed = false;
+                }
+            });
+        });
+    });
+    saveAndRender();
+};
+
+window.loadPreset = function(presetKey) {
+    addTask(presetKey);
+};
+
+window.exportData = function() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `metas-aqw-backup-${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+};
+
+window.importData = function(event) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(e) {
+        try {
+            const importedTasks = JSON.parse(e.target.result);
+            if (Array.isArray(importedTasks)) {
+                tasks = importedTasks;
+                saveAndRender();
+                alert("Backup importado com sucesso!");
+            } else {
+                alert("Arquivo JSON inválido.");
+            }
+        } catch(err) {
+            alert("Erro ao ler o arquivo JSON.");
+        }
+    };
+    if (event.target.files[0]) {
+        fileReader.readAsText(event.target.files[0]);
+    }
+};
+
+function getItemProgress(item) {
+    if (!item.hasQuantity) return item.completed ? 100 : 0;
+    if (item.totalQty <= 0) return 0;
+    return Math.min(100, Math.round((item.currentQty / item.totalQty) * 100));
+}
+
+function getSubtaskProgress(subtask) {
+    if (!subtask.items || subtask.items.length === 0) return 0;
+    let totalPercent = 0;
+    subtask.items.forEach(item => totalPercent += getItemProgress(item));
+    return Math.round(totalPercent / subtask.items.length);
+}
+
+function getTaskProgress(task) {
+    if (!task.subtasks || task.subtasks.length === 0) return 0;
+    let totalPercent = 0;
+    task.subtasks.forEach(sub => totalPercent += getSubtaskProgress(sub));
+    return Math.round(totalPercent / task.subtasks.length);
+}
+
+function updateStats() {
+    const totalTasks = tasks.length;
+    let completedTasks = 0;
+    let totalProgressSum = 0;
+
+    tasks.forEach(task => {
+        const prog = getTaskProgress(task);
+        totalProgressSum += prog;
+        if (prog === 100 && task.subtasks.length > 0) completedTasks++;
+    });
+
+    const overallProgress = totalTasks > 0 ? Math.round(totalProgressSum / totalTasks) : 0;
+
+    document.getElementById('stat-total-tasks').innerText = totalTasks;
+    document.getElementById('stat-completed-tasks').innerText = completedTasks;
+    document.getElementById('stat-overall-progress').innerText = `${overallProgress}%`;
+}
+
+window.renderTasks = function() {
+    updateStats();
+    const container = document.getElementById('tasks-container');
+    const searchQuery = (document.getElementById('search-input')?.value || '').toLowerCase();
+    container.innerHTML = '';
+
+    let filteredTasks = tasks.filter(task => {
+        const matchesSearch = task.title.toLowerCase().includes(searchQuery) ||
+            task.subtasks.some(s => s.title.toLowerCase().includes(searchQuery) || 
+            s.items.some(i => i.title.toLowerCase().includes(searchQuery)));
+        const prog = getTaskProgress(task);
+        const isCompleted = prog === 100 && task.subtasks.length > 0;
+
+        if (currentFilter === 'active') return matchesSearch && !isCompleted;
+        if (currentFilter === 'completed') return matchesSearch && isCompleted;
+        return matchesSearch;
+    });
+
+    if (filteredTasks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800 border-dashed text-zinc-500">
+                <i class="fa-solid fa-inbox text-3xl mb-2 text-zinc-600"></i>
+                <p class="text-xs text-zinc-400 font-medium">Nenhuma meta encontrada.</p>
+            </div>`;
+        return;
+    }
+
+    filteredTasks.forEach(task => {
+        const mainProgress = getTaskProgress(task);
+        const isMastered = mainProgress === 100 && task.subtasks.length > 0;
+        const card = document.createElement('div');
+        card.className = `bg-zinc-900 rounded-xl border ${isMastered ? 'border-emerald-500/40' : 'border-zinc-800'} p-5 shadow-sm space-y-4 transition`;
+
+        card.innerHTML = `
+            <div class="flex items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-flag ${isMastered ? 'text-emerald-400' : 'text-indigo-400'} text-sm"></i>
+                    <h2 class="font-semibold text-base text-zinc-100 flex items-center gap-2">
+                        ${escapeHtml(task.title)}
+                        <button onclick="editTaskTitle(${task.id})" class="text-zinc-500 hover:text-zinc-300 text-xs transition" title="Editar Título">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </h2>
+                    ${isMastered ? '<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-500/20">CONCLUÍDO</span>' : ''}
+                </div>
+                <button onclick="deleteTask(${task.id})" class="text-zinc-500 hover:text-red-400 transition text-xs p-1 rounded" title="Excluir meta">
+                    <i class="fa-regular fa-trash-can"></i>
+                </button>
+            </div>
+
+            <div class="space-y-1 bg-zinc-950 p-3 rounded-lg border border-zinc-800/80">
+                <div class="flex justify-between text-xs font-medium">
+                    <span class="text-zinc-400">Progresso da Meta</span>
+                    <span class="${isMastered ? 'text-emerald-400' : 'text-indigo-400'} font-semibold">${mainProgress}%</span>
+                </div>
+                <div class="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-800">
+                    <div class="${isMastered ? 'bg-emerald-500' : 'bg-indigo-500'} h-2 rounded-full transition-all duration-300" style="width: ${mainProgress}%"></div>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-1">
+                ${task.subtasks.map(sub => {
+                    const subProgress = getSubtaskProgress(sub);
+                    return `
+                        <div class="bg-zinc-950/60 p-3.5 rounded-lg border border-zinc-800/80 space-y-3">
+                            <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                                <span class="text-xs font-medium text-zinc-200 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-list-ul text-[10px] text-indigo-400"></i>
+                                    ${escapeHtml(sub.title)}
+                                    <button onclick="editSubtaskTitle(${task.id}, ${sub.id})" class="text-zinc-500 hover:text-zinc-300 text-xs transition" title="Editar Passo">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </span>
+                                <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-zinc-500 hover:text-red-400 transition text-xs">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px] text-zinc-400">
+                                    <span>Progresso do Passo</span>
+                                    <span class="text-emerald-400 font-semibold">${subProgress}%</span>
+                                </div>
+                                <div class="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden border border-zinc-800">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5 pl-2 border-l border-zinc-800">
+                                ${sub.items.map(item => {
+                                    const itemProg = getItemProgress(item);
+                                    const wikiUrl = `https://aqwwiki.wikidot.com/search:main/q/${encodeURIComponent(item.title)}`;
+                                    return `
+                                        <div class="bg-zinc-900/90 p-2.5 rounded border border-zinc-800/80 text-xs space-y-1.5 hover:border-zinc-700 transition">
+                                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                                <label class="flex items-center gap-2 cursor-pointer flex-1 select-none min-w-[140px]">
+                                                    <input type="checkbox" ${item.completed ? 'checked' : ''} 
+                                                        onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
+                                                        class="w-3.5 h-3.5 accent-indigo-500 rounded cursor-pointer bg-zinc-950 border-zinc-700">
+                                                    <span class="${item.completed ? 'line-through text-zinc-500' : 'text-zinc-200'} font-medium flex-1">
+                                                        ${escapeHtml(item.title)}
+                                                    </span>
+                                                </label>
+
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    ${item.isDaily ? `
+                                                        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                            <i class="fa-regular fa-calendar text-[8px]"></i> DAILY
+                                                        </span>
+                                                    ` : ''}
+
+                                                    <a href="${wikiUrl}" target="_blank" title="Buscar na AQW Wiki" class="text-zinc-500 hover:text-indigo-400 transition text-xs p-1">
+                                                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                                    </a>
+
+                                                    ${item.hasQuantity ? `
+                                                        <div class="flex items-center gap-1 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 text-[11px]">
+                                                            <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
+                                                                onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
+                                                                class="w-10 bg-transparent text-right text-emerald-400 font-semibold focus:outline-none">
+                                                            <span class="text-zinc-600">/</span>
+                                                            <span class="text-zinc-400">${item.totalQty}</span>
+
+                                                            <button onclick="adjustQuantity(${task.id}, ${sub.id}, ${item.id}, 1)" class="bg-zinc-800 hover:bg-zinc-700 px-1.5 rounded text-[10px] text-zinc-300 ml-1">+</button>
+                                                            <button onclick="adjustQuantity(${task.id}, ${sub.id}, ${item.id}, 'max')" class="bg-zinc-800 hover:bg-zinc-700 px-1.5 rounded text-[10px] text-indigo-400">Max</button>
+                                                        </div>
+                                                    ` : ''}
+
+                                                    <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-zinc-500 hover:text-red-400 transition text-xs p-1">
+                                                        <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            ${item.hasQuantity ? `
+                                                <div class="w-full bg-zinc-950 rounded-full h-1 overflow-hidden border border-zinc-800/50">
+                                                    <div class="bg-indigo-500 h-1 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+
+                            <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-zinc-900/40 p-2.5 rounded border border-zinc-800 space-y-2 mt-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Adicionar Requisito:</span>
+                                    <div class="flex items-center gap-2">
+                                        <label class="flex items-center gap-1 cursor-pointer text-[10px] text-zinc-400 select-none">
+                                            <input type="checkbox" class="daily-toggle accent-emerald-500 rounded w-3 h-3">
+                                            Daily?
+                                        </label>
+                                        <label class="flex items-center gap-1 cursor-pointer text-[10px] text-zinc-400 select-none">
+                                            <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded w-3 h-3">
+                                            Qtd?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1.5 items-center">
+                                    <input type="text" placeholder="Nome do requisito..." required class="item-title flex-1 bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500">
+                                    <div class="qty-container hidden flex items-center gap-1 bg-zinc-950 p-0.5 rounded border border-zinc-800">
+                                        <input type="number" min="0" value="0" class="item-qty-current w-10 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-center text-zinc-100">
+                                        <span class="text-zinc-600 text-xs">/</span>
+                                        <input type="number" min="1" value="10" class="item-qty-total w-10 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-center text-zinc-100">
+                                    </div>
+                                    <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium px-2.5 py-1 rounded text-xs border border-zinc-700 transition">
+                                        Add
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-2 border-t border-zinc-800">
+                <input type="text" placeholder="Novo passo (ex: Passo 4)..." required class="subtask-input flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition">
+                <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-3 py-1.5 rounded-lg text-xs border border-zinc-700 transition flex items-center gap-1">
+                    <i class="fa-solid fa-plus text-[10px]"></i> Passo
+                </button>
+            </form>
+        `;
+        container.appendChild(card);
+    });
+};
+
+window.toggleQtyInputs = function(checkbox) {
+    const form = checkbox.closest('form');
+    form.querySelector('.qty-container').classList.toggle('hidden', !checkbox.checked);
+};
+
+window.handleItemSubmit = function(e, taskId, subtaskId) {
+    e.preventDefault();
+    const form = e.target;
+    const title = form.querySelector('.item-title').value.trim();
+    const hasQuantity = form.querySelector('.qty-toggle').checked;
+    const isDaily = form.querySelector('.daily-toggle').checked;
+    const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
+    const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
+    if (title) addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty, isDaily);
+    form.reset();
+    form.querySelector('.qty-container').classList.add('hidden');
+};
+
+window.handleSubtaskSubmit = function(e, taskId) {
+    e.preventDefault();
+    const input = e.target.querySelector('.subtask-input');
+    if (input.value.trim()) {
+        addSubtask(taskId, input.value.trim());
+        input.value = '';
+    }
+};
+
+document.getElementById('task-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('task-input');
+    if (input.value.trim()) {
+        addTask(input.value.trim());
+        input.value = '';
+    }
+});
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+}
