@@ -1,8 +1,9 @@
 import json
+import re
 import requests
 from bs4 import BeautifulSoup
 
-def extrair_requisitos_wiki(url_pagina):
+def evoluir_scraper_para_js(url_pagina):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
@@ -12,43 +13,69 @@ def extrair_requisitos_wiki(url_pagina):
     
     if resposta.status_code != 200:
         print(f"[-] Erro ao acessar a página. Código: {resposta.status_code}")
-        return None
+        return
 
     soup = BeautifulSoup(resposta.text, 'html.parser')
     
     titulo_elem = soup.find(id="page-title")
-    nome_item = titulo_elem.get_text(strip=True) if titulo_elem else "Desconhecido"
+    nome_item = titulo_elem.get_text(strip=True) if titulo_elem else "Item Desconhecido"
     
     conteudo = soup.find(id="page-content")
     if not conteudo:
         print("[-] Conteúdo principal não encontrado.")
-        return None
+        return
 
-    requisitos = []
+    requirements = []
+    
+    # Varre a página buscando padrões de itens e quantidades (ex: "Item x200")
     for elemento in conteudo.find_all(['p', 'li', 'td']):
         texto = elemento.get_text(strip=True)
-        if texto and len(texto) < 150:
-            if any(termo in texto.lower() for termo in ['x', 'item', 'merge', 'quest', 'drop']):
-                if texto not in requisitos:
-                    requisitos.append(texto)
+        match = re.search(r'^(.*?)\s+x(\d+)', texto, re.IGNORECASE)
+        if match:
+            nome_req = match.group(1).strip()
+            max_qtd = int(match.group(2))
+            nome_req = re.sub(r'\[.*?\]', '', nome_req).strip()
+            
+            if not any(r['name'] == nome_req for r in requirements):
+                is_daily = "daily" in texto.lower() or "diária" in texto.lower()
+                requirements.append({
+                    "name": nome_req,
+                    "max": max_qtd,
+                    "isDaily": is_daily
+                })
 
-    dados = {
-        "item_name": nome_item,
-        "url": url_pagina,
-        "requirements": requisitos
-    }
+    # Formata os requisitos no padrão de objetos JavaScript
+    reqs_js_lines = []
+    for req in requirements:
+        reqs_js_lines.append(f'                    {{ name: "{req["name"]}", current: 0, max: {req["max"]}, isDaily: {str(req["isDaily"]).lower()} }}')
     
-    return dados
+    reqs_str = ",\n".join(reqs_js_lines)
+
+    # Cria o bloco completo do preset em JS
+    chave_preset = re.sub(r'[^a-z0-9]', '', nome_item.lower())
+    codigo_js = f"""    {chave_preset}: {{
+        title: "{nome_item}",
+        wiki: "{url_pagina}",
+        steps: [
+            {{
+                title: "Passo 1: {nome_item}",
+                description: "Materiais necessários para fundir {nome_item}.",
+                requirements: [
+{reqs_str}
+                ]
+            }}
+        ]
+    }},"""
+
+    print("\n[SUCESSO] Bloco JavaScript gerado:\n")
+    print(codigo_js)
+    
+    # Salva o resultado em um arquivo de texto pronto para cópia
+    with open("preset_gerado.js", "w", encoding="utf-8") as f:
+        f.write(codigo_js)
+    print("\n[+] Salvo com sucesso no arquivo 'preset_gerado.js'!")
 
 if __name__ == "__main__":
-    url_alvo = input("Cole a URL exata da página da Wiki (ex: http://aqwwiki.wikidot.com/void-crystal-b): ").strip()
-    
+    url_alvo = input("Cole a URL exata da página da Wiki: ").strip()
     if url_alvo:
-        resultado = extrair_requisitos_wiki(url_alvo)
-        if resultado:
-            print("\n[SUCESSO] Dados extraídos:")
-            print(json.dumps(resultado, indent=4, ensure_ascii=False))
-            
-            with open("resultado_scraping.json", "w", encoding="utf-8") as f:
-                json.dump(resultado, f, indent=4, ensure_ascii=False)
-            print("\n[+] Salvo com sucesso no arquivo 'resultado_scraping.json'!")
+        evoluir_scraper_para_js(url_alvo)
