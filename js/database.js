@@ -1,9 +1,39 @@
 export const PRESETS = {
     vhl: {
         title: "Void Highlord (VHL)",
+        wiki: "http://aqwwiki.wikidot.com/void-highlord-class",
         steps: [
             {
-                title: "Passo 1: Roentgenium of Nulgath (15 Diárias)",
+                title: "Passo 1: Void Crystal A",
+                description: "Materiais necessários para fundir o Void Crystal A no merge.",
+                requirements: [
+                    { 
+                        name: "Unidentified 10", 
+                        current: 0, 
+                        max: 200, 
+                        isDaily: false,
+                        subRequirements: [
+                            { name: "Relic of Chaos", current: 0, max: 1, isDaily: false }
+                        ]
+                    },
+                    { name: "Gem of Nulgath", current: 0, max: 150, isDaily: false },
+                    { name: "Dark Crystal Shard", current: 0, max: 200, isDaily: false },
+                    { name: "Tainted Gem", current: 0, max: 200, isDaily: false }
+                ]
+            },
+            {
+                title: "Passo 2: Void Crystal B",
+                description: "Materiais necessários para fundir o Void Crystal B no merge.",
+                requirements: [
+                    { name: "Diamond of Nulgath", current: 0, max: 200, isDaily: false },
+                    { name: "Blood Gem of the Archfiend", current: 0, max: 30, isDaily: false },
+                    { name: "Totem of Nulgath", current: 0, max: 15, isDaily: false },
+                    { name: "Elders' Blood", current: 0, max: 2, isDaily: true }
+                ]
+            },
+            {
+                title: "Passo 3: Roentgenium of Nulgath (15 Diárias)",
+                description: "Missão diária 'Void Highlord's Challenge' (Exige 15 turn-ins diários)",
                 requirements: [
                     { 
                         name: "Roentgenium of Nulgath", 
@@ -11,58 +41,11 @@ export const PRESETS = {
                         max: 15, 
                         isDaily: true,
                         subRequirements: [
-                            { name: "Unidentified 13", current: 0, max: 1, isDaily: false },
+                            { name: "Unidentified 13", current: 0, max: 1, isDaily: true },
                             { name: "Blood Gem of the Archfiend", current: 0, max: 2, isDaily: false },
                             { name: "Diamond of Nulgath", current: 0, max: 30, isDaily: false },
                             { name: "Dark Crystal Shard", current: 0, max: 30, isDaily: false },
                             { name: "Tainted Gem", current: 0, max: 30, isDaily: false },
-                            { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                title: "Passo 2: Totem of Nulgath (15 Totens)",
-                requirements: [
-                    { 
-                        name: "Totem of Nulgath", 
-                        current: 0, 
-                        max: 15, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Unidentified 13", current: 0, max: 3, isDaily: false },
-                            { name: "Essence of Nulgath", current: 0, max: 100, isDaily: false },
-                            { name: "Gem of Nulgath", current: 0, max: 15, isDaily: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                title: "Passo 3: Void Crystals A e B",
-                requirements: [
-                    { 
-                        name: "Void Crystal A", 
-                        current: 0, 
-                        max: 1, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Blood Gem of the Archfiend", current: 0, max: 3, isDaily: false },
-                            { name: "Diamond of Nulgath", current: 0, max: 50, isDaily: false },
-                            { name: "Dark Crystal Shard", current: 0, max: 50, isDaily: false },
-                            { name: "Tainted Gem", current: 0, max: 50, isDaily: false },
-                            { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
-                        ]
-                    },
-                    { 
-                        name: "Void Crystal B", 
-                        current: 0, 
-                        max: 1, 
-                        isDaily: false,
-                        subRequirements: [
-                            { name: "Blood Gem of the Archfiend", current: 0, max: 3, isDaily: false },
-                            { name: "Diamond of Nulgath", current: 0, max: 50, isDaily: false },
-                            { name: "Dark Crystal Shard", current: 0, max: 50, isDaily: false },
-                            { name: "Tainted Gem", current: 0, max: 50, isDaily: false },
                             { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
                         ]
                     }
