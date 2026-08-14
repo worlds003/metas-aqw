@@ -1,28 +1,26 @@
 export const PRESETS = {
     vhl: {
         title: "Void Highlord (VHL)",
-        wiki: "http://aqwwiki.wikidot.com/void-highlord-s-quest",
+        wiki: "http://aqwwiki.wikidot.com/void-highlord-class",
         steps: [
             {
                 title: "Passo 1: Void Crystal A",
-                description: "Materiais necessários para fundir o Void Crystal A no merge.",
+                description: "Materiais necessários para fundir o Void Crystal A no merge de Tercessuinotlim.",
                 requirements: [
-                    { name: "Diamond of Nulgath", current: 0, max: 200, isDaily: false },
-                    { name: "Blood Gem of the Archfiend", current: 0, max: 100, isDaily: false },
-                    { name: "Dark Crystal Shard", current: 0, max: 50, isDaily: false },
-                    { name: "Tainted Gem", current: 0, max: 50, isDaily: false },
-                    { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
+                    { name: "Unidentified 10", current: 0, max: 200, isDaily: false },
+                    { name: "Gem of Nulgath", current: 0, max: 150, isDaily: false },
+                    { name: "Dark Crystal Shard", current: 0, max: 200, isDaily: false },
+                    { name: "Tainted Gem", current: 0, max: 200, isDaily: false }
                 ]
             },
             {
                 title: "Passo 2: Void Crystal B",
-                description: "Materiais necessários para fundir o Void Crystal B no merge.",
+                description: "Materiais necessários para fundir o Void Crystal B no merge de Tercessuinotlim.",
                 requirements: [
                     { name: "Diamond of Nulgath", current: 0, max: 200, isDaily: false },
-                    { name: "Blood Gem of the Archfiend", current: 0, max: 100, isDaily: false },
-                    { name: "Dark Crystal Shard", current: 0, max: 50, isDaily: false },
-                    { name: "Tainted Gem", current: 0, max: 50, isDaily: false },
-                    { name: "Voucher of Nulgath (non-mem)", current: 0, max: 1, isDaily: false }
+                    { name: "Blood Gem of the Archfiend", current: 0, max: 30, isDaily: false },
+                    { name: "Totem of Nulgath", current: 0, max: 15, isDaily: false },
+                    { name: "Elders' Blood", current: 0, max: 2, isDaily: true }
                 ]
             },
             {
