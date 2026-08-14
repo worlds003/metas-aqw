@@ -1,120 +1,216 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tarefas Compartilhadas</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarefas Compartilhadas</title>
+    <!-- Tailwind CSS CDN para estilização rápida e moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 min-h-screen p-4 sm:p-6 font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen py-10 px-4 font-sans">
 
-  <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-      📋 Tarefas da Equipe
-    </h1>
+    <div class="max-w-2xl mx-auto space-y-6">
+        <!-- Cabeçalho -->
+        <header class="text-center space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight text-indigo-400 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Tarefas Compartilhadas
+            </h1>
+            <p class="text-slate-400 text-sm">Gerencie suas metas e acompanhe o progresso das equipes.</p>
+        </header>
 
-    <!-- Form Tarefa Principal -->
-    <div class="flex gap-2 mb-6">
-      <input type="text" id="parentInput" placeholder="Nova tarefa principal..." class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <button onclick="addParentTask()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">Adicionar</button>
+        <!-- Formulário para Nova Tarefa Principal -->
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+            <form id="task-form" class="flex gap-2">
+                <input type="text" id="task-input" placeholder="Nova tarefa principal..." required
+                    class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <button type="submit" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Adicionar
+                </button>
+            </form>
+        </div>
+
+        <!-- Lista de Tarefas -->
+        <main id="tasks-container" class="space-y-4">
+            <!-- As tarefas serão inseridas dinamicamente via JS -->
+        </main>
     </div>
 
-    <!-- Lista de Tarefas -->
-    <div id="tasksList" class="space-y-4"></div>
-  </div>
+    <!-- Script da Aplicação -->
+    <script>
+        // Carrega as tarefas do localStorage ou inicia com uma lista vazia
+        let tasks = JSON.parse(localStorage.getItem('metas_aqw_tasks')) || [
+            {
+                id: 1,
+                title: "Exemplo de Tarefa",
+                subtasks: [
+                    { id: 101, title: "Subtarefa 1", completed: false },
+                    { id: 102, title: "Subtarefa 2", completed: true }
+                ]
+            }
+        ];
 
-  <script>
-    // Configuração do Supabase
-    const SUPABASE_URL = 'https://kxhqbwstlhvbmjpgayyq.supabase.co'; 
-    const SUPABASE_KEY = 'sb_publishable_J6K1ZU0pXpCrWQGtp4Owng_ZkhqqHlP';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        function saveAndRender() {
+            localStorage.setItem('metas_aqw_tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
 
-    async function loadTasks() {
-      const { data: tasks, error } = await supabaseClient
-        .from('tasks')
-        .select('*, subtasks(*)')
-        .order('created_at', { ascending: true });
+        function addTask(title) {
+            tasks.push({
+                id: Date.now(),
+                title: title,
+                subtasks: []
+            });
+            saveAndRender();
+        }
 
-      if (error) return console.error('Erro ao carregar tarefas:', error);
-      renderTasks(tasks || []);
-    }
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveAndRender();
+        }
 
-    function renderTasks(tasks) {
-      const container = document.getElementById('tasksList');
-      container.innerHTML = '';
+        function addSubtask(taskId, title) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks.push({
+                    id: Date.now(),
+                    title: title,
+                    completed: false
+                });
+                saveAndRender();
+            }
+        }
 
-      tasks.forEach((task) => {
-        const subtasks = task.subtasks || [];
-        const totalSub = subtasks.length;
-        const completedSub = subtasks.filter(s => s.completed).length;
-        const progress = totalSub > 0 ? Math.round((completedSub / totalSub) * 100) : 0;
+        function toggleSubtask(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(s => s.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    saveAndRender();
+                }
+            }
+        }
 
-        // Ordena as subtarefas por data de criação
-        subtasks.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        function deleteSubtask(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+                saveAndRender();
+            }
+        }
 
-        const card = document.createElement('div');
-        card.className = "border rounded-lg p-4 bg-gray-50 shadow-sm";
-        card.innerHTML = `
-          <div class="flex justify-between items-center mb-2">
-            <h3 class="font-semibold text-lg text-gray-800">${task.title}</h3>
-            <span class="text-sm font-bold text-blue-600">${progress}%</span>
-          </div>
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
 
-          <!-- Barra de Progresso -->
-          <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
-            <div class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
-          </div>
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-500">
+                        <i class="fa-regular fa-folder-open text-4xl mb-2"></i>
+                        <p>Nenhuma tarefa cadastrada ainda.</p>
+                    </div>
+                `;
+                return;
+            }
 
-          <!-- Lista de Subtarefas -->
-          <div class="pl-2 space-y-2 mb-4">
-            ${subtasks.map((sub) => `
-              <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-100 p-1 rounded">
-                <input type="checkbox" ${sub.completed ? 'checked' : ''} onchange="toggleSubtask('${sub.id}', ${sub.completed})" class="w-4 h-4 text-blue-600 rounded">
-                <span class="${sub.completed ? 'line-through text-gray-400' : 'text-gray-700'}">${sub.title}</span>
-              </label>
-            `).join('')}
-          </div>
+            tasks.forEach(task => {
+                const totalSubtasks = task.subtasks.length;
+                const completedSubtasks = task.subtasks.filter(s => s.completed).length;
+                const progress = totalSubtasks === 0 ? 0 : Math.round((completedSubtasks / totalSubtasks) * 100);
 
-          <!-- Input de Nova Subtarefa -->
-          <div class="flex gap-2">
-            <input type="text" id="subInput-${task.id}" placeholder="Nova subtarefa..." class="text-sm border rounded px-3 py-1.5 flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            <button onclick="addSubtask('${task.id}')" class="bg-gray-200 text-gray-700 text-sm px-3 py-1.5 rounded font-medium hover:bg-gray-300 transition">+ Subtarefa</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-md space-y-4";
 
-    async function addParentTask() {
-      const input = document.getElementById('parentInput');
-      if (!input.value.trim()) return;
+                card.innerHTML = `
+                    <!-- Topo da Tarefa -->
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-indigo-400"></i>
+                            <h2 class="font-semibold text-lg text-slate-100">${escapeHtml(task.title)}</h2>
+                        </div>
+                        <button onclick="deleteTask(${task.id})" class="text-slate-500 hover:text-red-400 transition p-1" title="Excluir tarefa">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
 
-      await supabaseClient.from('tasks').insert([{ title: input.value.trim() }]);
-      input.value = '';
-      loadTasks();
-    }
+                    <!-- Barra de Progresso -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Progresso</span>
+                            <span>${progress}% (${completedSubtasks}/${totalSubtasks})</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                            <div class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
 
-    async function addSubtask(taskId) {
-      const input = document.getElementById(`subInput-${taskId}`);
-      if (!input.value.trim()) return;
+                    <!-- Lista de Subtarefas -->
+                    <div class="space-y-2">
+                        ${task.subtasks.map(sub => `
+                            <div class="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/40 hover:border-slate-600 transition">
+                                <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
+                                    <input type="checkbox" ${sub.completed ? 'checked' : ''} 
+                                        onchange="toggleSubtask(${task.id}, ${sub.id})"
+                                        class="w-4 h-4 accent-indigo-500 rounded cursor-pointer">
+                                    <span class="text-sm ${sub.completed ? 'line-through text-slate-500' : 'text-slate-200'}">
+                                        ${escapeHtml(sub.title)}
+                                    </span>
+                                </label>
+                                <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
 
-      await supabaseClient.from('subtasks').insert([{ task_id: taskId, title: input.value.trim() }]);
-      input.value = '';
-      loadTasks();
-    }
+                    <!-- Formulário de Nova Subtarefa -->
+                    <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-2">
+                        <input type="text" placeholder="Nova subtarefa..." required
+                            class="subtask-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                        <button type="submit" 
+                            class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Subtarefa
+                        </button>
+                    </form>
+                `;
 
-    async function toggleSubtask(subtaskId, currentStatus) {
-      await supabaseClient.from('subtasks').update({ completed: !currentStatus }).eq('id', subtaskId);
-      loadTasks();
-    }
+                container.appendChild(card);
+            });
+        }
 
-    // Carrega as tarefas inicialmente e escuta mudanças em tempo real
-    loadTasks();
-    supabaseClient
-      .channel('schema-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => loadTasks())
-      .subscribe();
-  </script>
+        function handleSubtaskSubmit(e, taskId) {
+            e.preventDefault();
+            const input = e.target.querySelector('.subtask-input');
+            if (input.value.trim()) {
+                addSubtask(taskId, input.value.trim());
+                input.value = '';
+            }
+        }
+
+        document.getElementById('task-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('task-input');
+            if (input.value.trim()) {
+                addTask(input.value.trim());
+                input.value = '';
+            }
+        });
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, (m) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            })[m]);
+        }
+
+        // Renderização Inicial
+        renderTasks();
+    </script>
 </body>
 </html>
