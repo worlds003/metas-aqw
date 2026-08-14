@@ -21,489 +21,352 @@
         <form id="auth-form" class="space-y-4">
             <div>
                 <label class="text-xs text-slate-300 font-medium">E-mail</label>
-                <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
             <div>
                 <label class="text-xs text-slate-300 font-medium">Senha (mínimo 6 caracteres)</label>
-                <input type="password" id="auth-password" required placeholder="******" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                <input type="password" id="auth-password" required placeholder="******" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
             </div>
+            
             <div class="flex gap-3 pt-3">
-                <button type="button" onclick="handleLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-md">
+                <button type="button" onclick="handleLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </button>
-                <button type="button" onclick="handleRegister()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 rounded-lg text-sm transition">
-                    <i class="fa-solid fa-user-plus"></i> Cadastrar
+                <button type="button" onclick="handleSignup()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 rounded-lg text-sm transition border border-slate-600 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> Criar Conta
                 </button>
             </div>
         </form>
-        <div id="auth-error" class="text-xs text-red-400 text-center hidden bg-red-500/10 p-2 rounded border border-red-500/20"></div>
     </div>
 
-    <!-- PAINEL PRINCIPAL (SÓ APARECE APÓS LOGIN) -->
-    <div id="app-container" class="max-w-3xl mx-auto space-y-6 hidden">
-        <!-- Cabeçalho -->
-        <header class="flex justify-between items-center bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
+    <!-- TELA PRINCIPAL (APLICAÇÃO) -->
+    <div id="app-container" class="max-w-4xl mx-auto space-y-8 hidden">
+        
+        <!-- HEADER COM BOTÃO DE LOGOUT -->
+        <div class="flex items-center justify-between bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-md">
             <div>
-                <h1 class="text-2xl font-bold text-indigo-400 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check"></i> METAS NO AQW
+                <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">
+                    <i class="fa-solid fa-crosshairs"></i> Minhas Metas AQW
                 </h1>
-                <p id="user-email-display" class="text-xs text-slate-400 mt-1"></p>
+                <p id="user-email-display" class="text-xs text-slate-400">Carregando usuário...</p>
             </div>
-            <button onclick="handleLogout()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs px-4 py-2 rounded-lg border border-red-500/30 transition flex items-center gap-1.5 font-medium">
-                <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
+            <button onclick="handleLogout()" class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-medium">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
             </button>
-        </header>
+        </div>
 
-        <!-- Formulário para Nova Meta Principal -->
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg hover:border-slate-600 transition">
-            <form id="task-form" class="flex gap-2">
-                <input type="text" id="task-input" placeholder="Nova meta principal (ex: Void Highlord)..." required
-                    class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5 shadow">
-                    <i class="fa-solid fa-plus"></i> Adicionar Meta
+        <!-- FORMULÁRIO DE CRIAR META -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl space-y-4">
+            <h2 class="text-lg font-bold text-slate-200 border-b border-slate-700 pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-plus-circle text-indigo-400"></i> Criar Nova Meta
+            </h2>
+            
+            <form id="goal-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Título da Meta</label>
+                    <input type="text" id="goal-title" required placeholder="Ex: Farmar Void Highlord, VSK, NSoD..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+                
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Requisitos / Itens para Farmar</label>
+                    <div id="requirements-container" class="space-y-2">
+                        <!-- Campos dinâmicos entram aqui -->
+                    </div>
+                    <button type="button" onclick="addRequirementField()" class="mt-2 text-xs bg-slate-700 hover:bg-slate-600 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg transition flex items-center gap-1 font-medium">
+                        <i class="fa-solid fa-plus"></i> Adicionar Item
+                    </button>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Meta
                 </button>
             </form>
         </div>
 
-        <!-- Lista de Tarefas -->
-        <main id="tasks-container" class="space-y-4 pb-10">
-            <!-- As tarefas serão inseridas dinamicamente via JS -->
-            <div class="text-center py-20 text-slate-600">
-                <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
-                <p>Carregando suas metas...</p>
+        <!-- LISTA DE METAS -->
+        <div class="space-y-4">
+            <h2 class="text-xl font-bold text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-indigo-400"></i> Metas Cadastradas
+            </h2>
+            <div id="goals-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Cards de Metas são renderizados aqui -->
             </div>
-        </main>
+        </div>
+
     </div>
 
-    <!-- Script da Aplicação (Módulo Firebase) -->
+    <!-- SDK do Firebase via CDN (Módulos JS) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            doc, 
+            updateDoc, 
+            deleteDoc, 
+            query, 
+            where, 
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO SEU PROJETO FIREBASE ---
+        // Configuração do Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyC5JO0TndQiMREXKEMzXE3h3UuunRaVPPg",
+            apiKey: "AIzaSyD-EXEMPLO-COPIE-SUA-CHAVE-AQUI",
             authDomain: "metas-aqw.firebaseapp.com",
             projectId: "metas-aqw",
             storageBucket: "metas-aqw.firebasestorage.app",
-            messagingSenderId: "366374848500",
-            appId: "1:366374848500:web:cd313a2b95e344bedddba1",
-            measurementId: "G-W5DNRL8REZ"
+            messagingSenderId: "1837000-EXEMPLO",
+            appId: "1:1837000:web:MWE4MzcwMGUtZDdkMi00MWI4LThiZmUtNDMwMTM4ODcyZmU4"
         };
 
-        // Inicializar Firebase
+        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         let currentUser = null;
-        let tasks = [];
 
-        // --- GERENCIAMENTO DE ESTADO DE AUTENTICAÇÃO ---
-        onAuthStateChanged(auth, async (user) => {
+        // Monitor de Estado de Autenticação
+        onAuthStateChanged(auth, (user) => {
             const authContainer = document.getElementById('auth-container');
             const appContainer = document.getElementById('app-container');
-            const emailDisplay = document.getElementById('user-email-display');
+            const userEmailDisplay = document.getElementById('user-email-display');
 
             if (user) {
                 currentUser = user;
+                userEmailDisplay.innerText = `Conectado como: ${user.email}`;
                 authContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
-                emailDisplay.innerText = `Conectado como: ${user.email}`;
-                await loadUserTasks();
+                loadGoals();
             } else {
                 currentUser = null;
                 authContainer.classList.remove('hidden');
                 appContainer.classList.add('hidden');
-                tasks = [];
-                document.getElementById('tasks-container').innerHTML = '';
             }
         });
 
-        // --- FUNÇÕES DE LOGIN, CADASTRO E LOGOUT ---
+        // Funções de Autenticação
         window.handleLogin = async () => {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            errDiv.classList.add('hidden');
-
-            if (!email || !password) {
-                errDiv.innerText = "Preencha e-mail e senha.";
-                errDiv.classList.remove('hidden');
-                return;
-            }
+            if(!email || !password) return alert("Preencha todos os campos!");
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                console.error(err);
-                errDiv.innerText = "Erro ao entrar: Verifique e-mail/senha ou cadastre-se.";
-                errDiv.classList.remove('hidden');
+            } catch (error) {
+                alert("Erro ao entrar: " + error.message);
             }
         };
 
-        window.handleRegister = async () => {
+        window.handleSignup = async () => {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            errDiv.classList.add('hidden');
-
-            if (!email || password.length < 6) {
-                errDiv.innerText = "E-mail inválido ou senha com menos de 6 caracteres.";
-                errDiv.classList.remove('hidden');
-                return;
-            }
+            if(!email || !password) return alert("Preencha todos os campos!");
 
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                console.error(err);
-                errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
-                errDiv.classList.remove('hidden');
+                alert("Conta criada com sucesso!");
+            } catch (error) {
+                alert("Erro ao cadastrar: " + error.message);
             }
         };
 
-        window.handleLogout = () => signOut(auth);
+        window.handleLogout = () => {
+            signOut(auth);
+        };
 
-        // --- FUNÇÕES DO BANCO DE DADOS (FIRESTORE) ---
-        async function loadUserTasks() {
+        // Gerenciamento dos Campos Dinâmicos do Form
+        window.addRequirementField = (name = "", req = 1, current = 0) => {
+            const container = document.getElementById('requirements-container');
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50";
+            div.innerHTML = `
+                <input type="text" placeholder="Nome do Item (Ex: Roentgenium)" value="${name}" required class="req-name flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-100">
+                <input type="number" placeholder="Atual" value="${current}" min="0" required class="req-current w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-100">
+                <span class="text-xs text-slate-500">/</span>
+                <input type="number" placeholder="Meta" value="${req}" min="1" required class="req-target w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-100">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 p-1 text-xs">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        };
+
+        // Adiciona um campo padrão ao carregar a página
+        addRequirementField();
+
+        // Salvar Meta no Firestore
+        document.getElementById('goal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
             if (!currentUser) return;
-            const container = document.getElementById('tasks-container');
+
+            const title = document.getElementById('goal-title').value;
+            const reqEntries = document.querySelectorAll('#requirements-container > div');
             
-            try {
-                const docRef = doc(db, "users", currentUser.uid);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    tasks = docSnap.data().tasks || [];
-                } else {
-                    tasks = [];
-                    await setDoc(docRef, { tasks: [] });
-                }
-                renderTasks();
-            } catch (err) {
-                console.error("Erro ao carregar tarefas:", err);
-                container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados da nuvem. Tentando novamente...</div>`;
-                setTimeout(loadUserTasks, 5000);
-            }
-        }
-
-        async function saveAndRender() {
-            renderTasks();
-            
-            if (!currentUser) return;
-            
-            try {
-                const docRef = doc(db, "users", currentUser.uid);
-                await setDoc(docRef, { tasks: tasks }, { merge: true });
-            } catch (err) {
-                console.error("Erro ao salvar na nuvem:", err);
-            }
-        }
-
-        // --- LÓGICA DE MANIPULAÇÃO DAS TAREFAS ---
-        window.addTask = function(title) {
-            tasks.push({ id: Date.now(), title, subtasks: [] });
-            saveAndRender();
-        };
-
-        window.deleteTask = function(id) {
-            if(confirm("Tem certeza que deseja excluir esta meta principal e todas as suas quests?")) {
-                tasks = tasks.filter(t => t.id !== id);
-                saveAndRender();
-            }
-        };
-
-        window.addSubtask = function(taskId, title) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.subtasks.push({ id: Date.now(), title, items: [] });
-                saveAndRender();
-            }
-        };
-
-        window.deleteSubtask = function(taskId, subtaskId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
-                saveAndRender();
-            }
-        };
-
-        window.addItem = function(taskId, subtaskId, title, hasQuantity, currentQty, totalQty) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    const completed = hasQuantity ? (currentQty >= totalQty) : false;
-                    subtask.items.push({
-                        id: Date.now(), title, hasQuantity,
-                        currentQty: hasQuantity ? currentQty : 0,
-                        totalQty: hasQuantity ? totalQty : 1, completed
-                    });
-                    saveAndRender();
-                }
-            }
-        };
-
-        window.toggleItem = function(taskId, subtaskId, itemId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    const item = subtask.items.find(i => i.id === itemId);
-                    if (item) {
-                        item.completed = !item.completed;
-                        if (item.hasQuantity) item.currentQty = item.completed ? item.totalQty : 0;
-                        saveAndRender();
-                    }
-                }
-            }
-        };
-
-        window.updateItemQuantity = function(taskId, subtaskId, itemId, newQty) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    const item = subtask.items.find(i => i.id === itemId);
-                    if (item && item.hasQuantity) {
-                        item.currentQty = Math.max(0, Math.min(newQty, item.totalQty));
-                        item.completed = item.currentQty >= item.totalQty;
-                        saveAndRender();
-                    }
-                }
-            }
-        };
-
-        window.deleteItem = function(taskId, subtaskId, itemId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                const subtask = task.subtasks.find(s => s.id === subtaskId);
-                if (subtask) {
-                    subtask.items = subtask.items.filter(i => i.id !== itemId);
-                    saveAndRender();
-                }
-            }
-        };
-
-        // --- CÁLCULOS DE PROGRESSO E RENDERIZAÇÃO DA INTERFACE ---
-        function getItemProgress(item) {
-            if (!item.hasQuantity) return item.completed ? 100 : 0;
-            if (item.totalQty <= 0) return 0;
-            return Math.min(100, Math.round((item.currentQty / item.totalQty) * 100));
-        }
-
-        function getSubtaskProgress(subtask) {
-            if (!subtask.items || subtask.items.length === 0) return 0;
-            let totalPercent = 0;
-            subtask.items.forEach(item => totalPercent += getItemProgress(item));
-            return Math.round(totalPercent / subtask.items.length);
-        }
-
-        function getTaskProgress(task) {
-            if (!task.subtasks || task.subtasks.length === 0) return 0;
-            let totalPercent = 0;
-            task.subtasks.forEach(sub => totalPercent += getSubtaskProgress(sub));
-            return Math.round(totalPercent / task.subtasks.length);
-        }
-
-        function renderTasks() {
-            const container = document.getElementById('tasks-container');
-            container.innerHTML = '';
-
-            if (tasks.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-16 bg-slate-800/50 rounded-xl border border-slate-700/50 border-dashed text-slate-500">
-                        <i class="fa-regular fa-folder-open text-5xl mb-4 transition hover:text-indigo-400"></i>
-                        <p class="font-medium">Nenhuma meta cadastrada ainda.</p>
-                        <p class="text-xs mt-1">Use o formulário acima para começar seu farm!</p>
-                    </div>`;
-                return;
-            }
-
-            tasks.forEach(task => {
-                const mainProgress = getTaskProgress(task);
-                const card = document.createElement('div');
-                card.className = "bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-lg space-y-4 hover:border-slate-600 transition";
-
-                card.innerHTML = `
-                    <!-- Título da Meta Principal -->
-                    <div class="flex items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <i class="fa-solid fa-crosshairs text-indigo-400 text-lg"></i>
-                            <h2 class="font-bold text-xl text-slate-50 tracking-tight">${escapeHtml(task.title)}</h2>
-                        </div>
-                        <button onclick="deleteTask(${task.id})" class="text-slate-500 hover:text-red-400 transition p-1.5 rounded-lg hover:bg-slate-700/50" title="Excluir meta principal">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </div>
-
-                    <!-- Barra de Progresso Geral da Meta -->
-                    <div class="space-y-1.5 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                        <div class="flex justify-between text-xs text-slate-300 font-semibold tracking-wide">
-                            <span>PROGRESSO</span>
-                            <span class="text-indigo-300">${mainProgress}%</span>
-                        </div>
-                        <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700/50 shadow-inner">
-                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-400 h-3 rounded-full transition-all duration-500 ease-out" style="width: ${mainProgress}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Lista de Quests (Subtarefas) -->
-                    <div class="space-y-4 pt-2">
-                        ${task.subtasks.map(sub => {
-                            const subProgress = getSubtaskProgress(sub);
-                            return `
-                                <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700 space-y-3.5 shadow-inner">
-                                    <!-- Título da Quest -->
-                                    <div class="flex items-center justify-between border-b border-slate-700/50 pb-2.5">
-                                        <span class="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                                            <i class="fa-solid fa-chevron-right text-xs text-indigo-400"></i>
-                                            ${escapeHtml(sub.title)}
-                                        </span>
-                                        <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1 rounded hover:bg-slate-800">
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
-                                    </div>
-
-                                    <!-- Barra de Progresso da Quest -->
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-[11px] text-slate-400 font-medium">
-                                            <span>Progresso da Quest</span>
-                                            <span class="text-emerald-400">${subProgress}%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                                            <div class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Lista de Itens (Requisitos) -->
-                                    <div class="space-y-2 pl-2.5 border-l-2 border-slate-700/50">
-                                        ${sub.items.map(item => {
-                                            const itemProg = getItemProgress(item);
-                                            return `
-                                                <div class="bg-slate-800/60 p-3 rounded border border-slate-700/40 text-xs space-y-2.5 hover:border-slate-600 transition">
-                                                    <div class="flex items-center justify-between gap-3">
-                                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
-                                                            <input type="checkbox" ${item.completed ? 'checked' : ''} 
-                                                                onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
-                                                                class="w-4 h-4 accent-emerald-500 rounded cursor-pointer bg-slate-900 border-slate-600">
-                                                            <span class="${item.completed ? 'line-through text-slate-500' : 'text-slate-200'} font-medium flex-1">
-                                                                ${escapeHtml(item.title)}
-                                                            </span>
-                                                        </label>
-
-                                                        ${item.hasQuantity ? `
-                                                            <div class="flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-md border border-slate-700 shadow-inner text-[11px]">
-                                                                <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
-                                                                    onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
-                                                                    class="w-14 bg-transparent text-right text-emerald-300 font-bold focus:outline-none focus:text-white" title="Quantidade atual">
-                                                                <span class="text-slate-600">/</span>
-                                                                <span class="text-slate-400 font-medium">${item.totalQty}</span>
-                                                            </div>
-                                                        ` : ''}
-
-                                                        <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1 rounded hover:bg-slate-800" title="Remover item">
-                                                            <i class="fa-solid fa-trash-can text-[11px]"></i>
-                                                        </button>
-                                                    </div>
-
-                                                    ${item.hasQuantity ? `
-                                                        <!-- Barra de Progresso Individual do Item (Sem o texto "Progresso do Item") -->
-                                                        <div class="space-y-0.5 pt-1.5 border-t border-slate-700/50">
-                                                            <div class="flex justify-end text-[10px] text-slate-400 font-medium tracking-tight">
-                                                                <span>${itemProg}% (${item.currentQty}/${item.totalQty})</span>
-                                                            </div>
-                                                            <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                                                                <div class="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
-                                                            </div>
-                                                        </div>
-                                                    ` : ''}
-                                                </div>
-                                            `;
-                                        }).join('')}
-                                    </div>
-
-                                    <!-- Formulário para adicionar Novo Item à Quest -->
-                                    <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-slate-950/50 p-3 rounded-lg border border-slate-800 space-y-2.5 mt-3 shadow-inner">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-[11px] font-semibold text-slate-400 tracking-wider">NOVO:</span>
-                                            <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-300 select-none bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                                                <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded w-3.5 h-3.5">
-                                                Add Quantidade?
-                                            </label>
-                                        </div>
-                                        <div class="flex gap-2 items-center">
-                                            <input type="text" placeholder="Nome do item (ex: Tainted Gem)..." required class="item-title flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition">
-                                            <div class="qty-container hidden flex items-center gap-1.5 bg-slate-900 p-1 rounded-md border border-slate-700">
-                                                <input type="number" min="0" value="0" title="Quantidade inicial" class="item-qty-current w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
-                                                <span class="text-slate-600 text-xs">/</span>
-                                                <input type="number" min="1" value="10" title="Quantidade total necessária" class="item-qty-total w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
-                                            </div>
-                                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-1.5 rounded-md text-xs transition flex items-center gap-1.5 shadow active:scale-95">
-                                                <i class="fa-solid fa-plus text-[10px]"></i> ADD
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-
-                    <!-- Formulário para Nova Quest dentro da Meta -->
-                    <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-3 border-t border-slate-700/60 mt-3">
-                        <input type="text" placeholder="Nova quest ou categoria (ex: Requisitos de Quest)..." required class="subtask-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
-                        <button type="submit" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow active:scale-95">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Quest
-                        </button>
-                    </form>
-                `;
-                container.appendChild(card);
+            const requirements = [];
+            reqEntries.forEach(entry => {
+                const name = entry.querySelector('.req-name').value;
+                const current = parseInt(entry.querySelector('.req-current').value) || 0;
+                const target = parseInt(entry.querySelector('.req-target').value) || 1;
+                requirements.push({ name, current, target });
             });
-        }
 
-        // --- FUNÇÕES AUXILIARES DA INTERFACE ---
-        window.toggleQtyInputs = function(checkbox) {
-            const form = checkbox.closest('form');
-            form.querySelector('.qty-container').classList.toggle('hidden', !checkbox.checked);
-        };
-
-        window.handleItemSubmit = function(e, taskId, subtaskId) {
-            e.preventDefault();
-            const form = e.target;
-            const title = form.querySelector('.item-title').value.trim();
-            const hasQuantity = form.querySelector('.qty-toggle').checked;
-            const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
-            const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
-            if (title) addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty);
-            form.reset();
-            form.querySelector('.qty-container').classList.add('hidden');
-        };
-
-        window.handleSubtaskSubmit = function(e, taskId) {
-            e.preventDefault();
-            const input = e.target.querySelector('.subtask-input');
-            if (input.value.trim()) {
-                addSubtask(taskId, input.value.trim());
-                input.value = '';
+            if (requirements.length === 0) {
+                return alert("Adicione pelo menos um item para farmar!");
             }
-        };
 
-        document.getElementById('task-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('task-input');
-            if (input.value.trim()) {
-                addTask(input.value.trim());
-                input.value = '';
+            try {
+                await addDoc(collection(db, "goals"), {
+                    userId: currentUser.uid,
+                    title,
+                    requirements,
+                    createdAt: serverTimestamp()
+                });
+
+                document.getElementById('goal-form').reset();
+                document.getElementById('requirements-container').innerHTML = '';
+                addRequirementField();
+                loadGoals();
+            } catch (error) {
+                alert("Erro ao salvar meta: " + error.message);
             }
         });
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+        // Carregar e Renderizar Metas
+        async function loadGoals() {
+            if (!currentUser) return;
+            
+            const goalsList = document.getElementById('goals-list');
+            goalsList.innerHTML = `<p class="text-sm text-slate-400 col-span-2">Carregando metas...</p>`;
+
+            try {
+                const q = query(collection(db, "goals"), where("userId", "==", currentUser.uid));
+                const querySnapshot = await getDocs(q);
+
+                goalsList.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    goalsList.innerHTML = `<p class="text-sm text-slate-500 col-span-2">Nenhuma meta criada ainda.</p>`;
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const goal = docSnap.data();
+                    const goalId = docSnap.id;
+
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg space-y-3 flex flex-col justify-between";
+
+                    let reqsHtml = '';
+                    goal.requirements.forEach((req, index) => {
+                        const percent = Math.min(100, Math.round((req.current / req.target) * 100));
+                        reqsHtml += `
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-medium text-slate-300">${req.name}</span>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" value="${req.current}" min="0" max="${req.target}" 
+                                            onchange="updateProgress('${goalId}', ${index}, this.value)"
+                                            class="w-14 bg-slate-900 border border-slate-700 text-center rounded px-1 py-0.5 text-xs text-indigo-300 font-bold focus:outline-none focus:border-indigo-500">
+                                        <span class="text-slate-500">/ ${req.target}</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-700/50">
+                                    <div class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-700/50 mb-3">
+                                <h3 class="font-bold text-slate-100 flex items-center gap-2">
+                                    <span>${goal.title}</span>
+                                    <button onclick="editarTitulo('${goalId}', '${goal.title.replace(/'/g, "\\'")}')" class="text-xs text-slate-400 hover:text-indigo-400 transition p-1" title="Editar título">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </h3>
+                                <button onclick="deleteGoal('${goalId}')" class="text-xs text-slate-500 hover:text-red-400 transition p-1">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="space-y-3">
+                                ${reqsHtml}
+                            </div>
+                        </div>
+                    `;
+
+                    goalsList.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Erro ao carregar metas:", error);
+                goalsList.innerHTML = `<p class="text-sm text-red-400 col-span-2">Erro ao carregar metas.</p>`;
+            }
         }
+
+        // Função para Editar o Título da Meta
+        window.editarTitulo = async (goalId, currentTitle) => {
+            const newTitle = prompt("Edite o título da sua meta:", currentTitle);
+            
+            if (newTitle === null || newTitle.trim() === "") return;
+            if (newTitle.trim() === currentTitle) return;
+
+            try {
+                const goalRef = doc(db, "goals", goalId);
+                await updateDoc(goalRef, {
+                    title: newTitle.trim()
+                });
+                loadGoals();
+            } catch (error) {
+                alert("Erro ao editar o título: " + error.message);
+            }
+        };
+
+        // Atualizar Progresso de Item Específico
+        window.updateProgress = async (goalId, reqIndex, newValue) => {
+            const val = parseInt(newValue);
+            if (isNaN(val) || val < 0) return;
+
+            try {
+                const goalRef = doc(db, "goals", goalId);
+                const qSnap = await getDocs(query(collection(db, "goals"), where("__name__", "==", goalId)));
+                
+                if (!qSnap.empty) {
+                    const goalData = qSnap.docs[0].data();
+                    goalData.requirements[reqIndex].current = val;
+                    
+                    await updateDoc(goalRef, {
+                        requirements: goalData.requirements
+                    });
+                    loadGoals();
+                }
+            } catch (error) {
+                alert("Erro ao atualizar progresso: " + error.message);
+            }
+        };
+
+        // Excluir Meta
+        window.deleteGoal = async (goalId) => {
+            if (!confirm("Tem certeza que deseja apagar esta meta?")) return;
+
+            try {
+                await deleteDoc(doc(db, "goals", goalId));
+                loadGoals();
+            } catch (error) {
+                alert("Erro ao deletar: " + error.message);
+            }
+        };
     </script>
 </body>
 </html>
