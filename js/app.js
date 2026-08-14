@@ -138,6 +138,12 @@ function updateStats() {
                     step.requirements.forEach(req => {
                         totalReqs++;
                         if (req.current >= req.max) compReqs++;
+                        if (req.subRequirements) {
+                            req.subRequirements.forEach(sub => {
+                                totalReqs++;
+                                if (sub.current >= sub.max) compReqs++;
+                            });
+                        }
                     });
                 }
             });
@@ -178,6 +184,11 @@ window.renderTasks = () => {
             task.steps.forEach(step => {
                 step.requirements.forEach(req => {
                     if (req.name.toLowerCase().includes(query)) match = true;
+                    if (req.subRequirements) {
+                        req.subRequirements.forEach(sub => {
+                            if (sub.name.toLowerCase().includes(query)) match = true;
+                        });
+                    }
                 });
             });
             if (!match) return;
@@ -189,6 +200,12 @@ window.renderTasks = () => {
             step.requirements.forEach(req => {
                 totalR++;
                 if (req.current >= req.max) compR++;
+                if (req.subRequirements) {
+                    req.subRequirements.forEach(sub => {
+                        totalR++;
+                        if (sub.current >= sub.max) compR++;
+                    });
+                }
             });
         });
         const taskProgress = totalR > 0 ? Math.round((compR / totalR) * 100) : 0;
@@ -218,6 +235,12 @@ window.renderTasks = () => {
         task.steps.forEach((step, sIndex) => {
             let stepTotal = step.requirements.length;
             let stepComp = step.requirements.filter(r => r.current >= r.max).length;
+            step.requirements.forEach(r => {
+                if (r.subRequirements) {
+                    stepTotal += r.subRequirements.length;
+                    stepComp += r.subRequirements.filter(sub => sub.current >= sub.max).length;
+                }
+            });
             let stepProg = stepTotal > 0 ? Math.round((stepComp / stepTotal) * 100) : 0;
 
             html += `
@@ -229,25 +252,63 @@ window.renderTasks = () => {
                         <span class="text-zinc-500 font-mono">${stepProg}%</span>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-3">
             `;
 
             step.requirements.forEach((req, rIndex) => {
                 const isDone = req.current >= req.max;
                 html += `
-                    <div class="flex items-center justify-between bg-zinc-900 p-2.5 rounded-lg border border-zinc-800 gap-2">
-                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
-                            <span class="text-xs truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
-                            ${req.isDaily ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-1.5 py-0.5 rounded font-medium">DAILY</span>' : ''}
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="flex items-center gap-1 font-mono text-xs">
-                                <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
-                                <span class="text-zinc-500">/ ${req.max}</span>
+                    <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
+                                <span class="text-xs font-medium truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
+                                ${req.isDaily ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-1.5 py-0.5 rounded font-medium">DAILY</span>' : ''}
                             </div>
-                            <button onclick="setMaxReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition">Max</button>
-                            <button onclick="deleteReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-xs"></i></button>
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1 font-mono text-xs">
+                                    <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                    <span class="text-zinc-500">/ ${req.max}</span>
+                                </div>
+                                <button onclick="setMaxReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition">Max</button>
+                                <button onclick="deleteReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-xs"></i></button>
+                            </div>
+                        </div>
+                `;
+
+                // Renderizar Sub-Requisitos (Cadeia inferior)
+                if (req.subRequirements && req.subRequirements.length > 0) {
+                    html += `<div class="pl-6 pt-2 border-t border-zinc-800/60 space-y-2 mt-2">
+                                <div class="text-[10px] uppercase tracking-wider font-semibold text-indigo-400 mb-1">Subitens / Cadeia Necessária:</div>`;
+                    
+                    req.subRequirements.forEach((sub, subIndex) => {
+                        const subDone = sub.current >= sub.max;
+                        html += `
+                            <div class="flex items-center justify-between bg-zinc-950/80 p-2 rounded border border-zinc-800/50 gap-2">
+                                <div class="flex items-center gap-2 min-w-0 flex-1">
+                                    <input type="checkbox" ${subDone ? 'checked' : ''} onchange="toggleSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
+                                    <span class="text-[11px] truncate ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
+                                    ${sub.isDaily ? '<span class="text-[8px] bg-emerald-950 text-emerald-400 px-1 py-0.2 rounded">DAILY</span>' : ''}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1 font-mono text-[11px]">
+                                        <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-12 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                        <span class="text-zinc-500">/ ${sub.max}</span>
+                                    </div>
+                                    <button onclick="deleteSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-red-400 p-0.5 transition"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                // Formulário para adicionar novo subitem ao requisito principal
+                html += `
+                        <div class="pt-2 flex gap-2 items-center">
+                            <input type="text" id="new-sub-req-${tIndex}-${sIndex}-${rIndex}" placeholder="Adicionar subitem necessário..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-indigo-500">
+                            <input type="number" id="new-sub-max-${tIndex}-${sIndex}-${rIndex}" placeholder="Qtd" value="1" min="1" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1 py-1 text-[11px] text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
+                            <button onclick="addSubReq(${tIndex}, ${sIndex}, ${rIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] px-2.5 py-1 rounded transition">+ Subitem</button>
                         </div>
                     </div>
                 `;
@@ -256,7 +317,7 @@ window.renderTasks = () => {
             html += `
                     </div>
                     <div class="pt-2 border-t border-zinc-900 flex gap-2 items-center">
-                        <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
+                        <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito principal..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
                         <input type="number" id="new-max-${tIndex}-${sIndex}" placeholder="Qtd" value="1" min="1" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
                         <label class="flex items-center gap-1 text-[10px] text-zinc-400 cursor-pointer">
                             <input type="checkbox" id="new-daily-${tIndex}-${sIndex}" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600"> Diário?
@@ -329,7 +390,55 @@ window.addReq = (tIndex, sIndex) => {
         name,
         current: 0,
         max,
-        isDaily
+        isDaily,
+        subRequirements: []
+    });
+
+    saveTasksToStorage();
+    renderTasks();
+};
+
+// Funções para Sub-Requisitos
+window.toggleSubReq = (tIndex, sIndex, rIndex, subIndex) => {
+    const sub = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex];
+    sub.current = (sub.current >= sub.max) ? 0 : sub.max;
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.updateSubReqValue = (tIndex, sIndex, rIndex, subIndex, val) => {
+    const num = parseInt(val);
+    if (!isNaN(num)) {
+        const sub = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex];
+        sub.current = Math.max(0, Math.min(num, sub.max));
+        saveTasksToStorage();
+        renderTasks();
+    }
+};
+
+window.deleteSubReq = (tIndex, sIndex, rIndex, subIndex) => {
+    tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements.splice(subIndex, 1);
+    saveTasksToStorage();
+    renderTasks();
+};
+
+window.addSubReq = (tIndex, sIndex, rIndex) => {
+    const nameInput = document.getElementById(`new-sub-req-${tIndex}-${sIndex}-${rIndex}`);
+    const maxInput = document.getElementById(`new-sub-max-${tIndex}-${sIndex}-${rIndex}`);
+
+    const name = nameInput.value.trim();
+    const max = parseInt(maxInput.value) || 1;
+
+    if (!name) return;
+
+    const req = tasks[tIndex].steps[sIndex].requirements[rIndex];
+    if (!req.subRequirements) req.subRequirements = [];
+
+    req.subRequirements.push({
+        name,
+        current: 0,
+        max,
+        isDaily: false
     });
 
     saveTasksToStorage();
@@ -356,23 +465,6 @@ window.deleteTask = (tIndex) => {
         saveTasksToStorage();
         renderTasks();
     }
-};
-
-window.resetDailies = () => {
-    let count = 0;
-    tasks.forEach(task => {
-        task.steps.forEach(step => {
-            step.requirements.forEach(req => {
-                if (req.isDaily && req.current > 0) {
-                    req.current = 0;
-                    count++;
-                }
-            });
-        });
-    });
-    saveTasksToStorage();
-    renderTasks();
-    alert(`Reset de Dailies aplicado! ${count} requisitos diários zerados.`);
 };
 
 window.exportData = () => {
