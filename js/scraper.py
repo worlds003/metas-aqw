@@ -3,7 +3,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-def extrair_requisitos_wiki(url_pagina):
+def processar_pagina(url_pagina):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
@@ -18,7 +18,7 @@ def extrair_requisitos_wiki(url_pagina):
     soup = BeautifulSoup(resposta.text, 'html.parser')
     
     titulo_elem = soup.find(id="page-title")
-    nome_item = titulo_elem.get_text(strip=True) if titulo_elem else "Desconhecido"
+    nome_item = titulo_elem.get_text(strip=True) if titulo_elem else "Item Desconhecido"
     
     conteudo = soup.find(id="page-content")
     if not conteudo:
@@ -42,28 +42,44 @@ def extrair_requisitos_wiki(url_pagina):
                     "isDaily": is_daily
                 })
 
-    return {
-        "title": nome_item,
-        "url": url_pagina,
-        "requirements": requirements
-    }
+    reqs_js_lines = []
+    for req in requirements:
+        reqs_js_lines.append(f'                    {{ name: "{req["name"]}", current: 0, max: {req["max"]}, isDaily: {str(req["isDaily"]).lower()} }}')
+    
+    reqs_str = ",\n".join(reqs_js_lines)
+    chave_preset = re.sub(r'[^a-z0-9]', '', nome_item.lower())
+    
+    codigo_js = f"""    {chave_preset}: {{
+        title: "{nome_item}",
+        wiki: "{url_pagina}",
+        steps: [
+            {{
+                title: "Passo 1: {nome_item}",
+                description: "Materiais necessários para fundir {nome_item}.",
+                requirements: [
+{reqs_str}
+                ]
+            }}
+        ]
+    }},"""
+    return codigo_js
 
 if __name__ == "__main__":
     try:
         with open("urls.txt", "r", encoding="utf-8") as f:
-            urls = [linha.strip() for linha in f if linha.strip()]
+            urls = [linha.strip() for linha in f if linha.strip() and not linha.startswith("#")]
     except FileNotFoundError:
-        print("[-] Arquivo 'urls.txt' não encontrado! Crie um arquivo com as URLs na mesma pasta.")
+        print("[-] Arquivo 'urls.txt' não encontrado! Crie um arquivo 'urls.txt' na mesma pasta.")
         urls = []
 
-    resultados_gerais = []
-    
+    todos_blocos = []
     for url in urls:
-        dados_item = extrair_requisitos_wiki(url)
-        if dados_item:
-            resultados_gerais.append(dados_item)
+        bloco = processar_pagina(url)
+        if bloco:
+            todos_blocos.append(bloco)
 
-    if resultados_gerais:
-        with open("resultado_lote.json", "w", encoding="utf-8") as f:
-            json.dump(resultados_gerais, f, indent=4, ensure_ascii=False)
-        print(f"\n[SUCESSO] {len(resultados_gerais)} itens processados e salvos no arquivo 'resultado_lote.json'!")
+    if todos_blocos:
+        resultado_final = "\n\n".join(todos_blocos)
+        with open("presets_lote_gerados.js", "w", encoding="utf-8") as f:
+            f.write(resultado_final)
+        print(f"\n[SUCESSO] {len(todos_blocos)} itens processados e salvos em 'presets_lote_gerados.js'!")
