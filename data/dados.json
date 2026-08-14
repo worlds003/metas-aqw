@@ -1,47 +1,49 @@
-{
-  "id": "void-highlord",
-  "nome": "Void Highlord",
-  "categoria": "Classes",
-  "wiki": "http://aqwwiki.wikidot.com/void-highlord-class",
-  "passos": [
-    {
-      "numero": 1,
-      "titulo": "Passo 1: Void Crystal A",
-      "descricao": "Coleta dos materiais pesados para a criação do primeiro cristal.",
-      "requisitos": [
-        { "nome": "Blood Gem of the Archfiend", "quantidadeAtual": 0, "quantidadeTotal": 100 },
-        { "nome": "Diamond of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 200 },
-        { "nome": "Gem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 500 },
-        { "nome": "Tainted Gem", "quantidadeAtual": 0, "quantidadeTotal": 500 },
-        { "nome": "Dark Crystal Shard", "quantidadeAtual": 0, "quantidadeTotal": 500 },
-        { "nome": "Voucher of Nulgath (non-mem)", "quantidadeAtual": 0, "quantidadeTotal": 20 },
-        { "nome": "Totem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 15 },
-        { "nome": "Relic of Chaos", "quantidadeAtual": 0, "quantidadeTotal": 1 },
-        { "nome": "The Nation's Spikes", "quantidadeAtual": 0, "quantidadeTotal": 1 }
-      ]
-    },
-    {
-      "numero": 2,
-      "titulo": "Passo 2: Void Crystal B",
-      "descricao": "Coleta dos materiais e itens do set para o segundo cristal.",
-      "requisitos": [
-        { "nome": "Blood Gem of the Archfiend", "quantidadeAtual": 0, "quantidadeTotal": 100 },
-        { "nome": "Diamond of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 200 },
-        { "nome": "Gem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 500 },
-        { "nome": "Tainted Gem", "quantidadeAtual": 0, "quantidadeTotal": 500 },
-        { "nome": "Dark Crystal Shard", "quantidadeAtual": 0, "quantidadeTotal": 500 },
-        { "nome": "Voucher of Nulgath (non-mem)", "quantidadeAtual": 0, "quantidadeTotal": 20 },
-        { "nome": "Totem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 15 },
-        { "nome": "Blood Plate", "quantidadeAtual": 0, "quantidadeTotal": 1 }
-      ]
-    },
-    {
-      "numero": 3,
-      "titulo": "Passo 3: Roentgenium of Nulgath (Diárias)",
-      "descricao": "Farm diário necessário para acumular os 15 Roentgeniums.",
-      "requisitos": [
-        { "nome": "Roentgenium of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 15 }
-      ]
-    }
-  ]
-}
+[
+  {
+    "id": "void-highlord",
+    "nome": "Void Highlord",
+    "categoria": "Classes",
+    "wiki": "http://aqwwiki.wikidot.com/void-highlord-class",
+    "passos": [
+      {
+        "numero": 1,
+        "titulo": "Passo 1: Void Crystal A",
+        "descricao": "Coleta dos materiais pesados para a criação do primeiro cristal.",
+        "requisitos": [
+          { "nome": "Blood Gem of the Archfiend", "quantidadeAtual": 0, "quantidadeTotal": 100 },
+          { "nome": "Diamond of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 200 },
+          { "nome": "Gem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 500 },
+          { "nome": "Tainted Gem", "quantidadeAtual": 0, "quantidadeTotal": 500 },
+          { "nome": "Dark Crystal Shard", "quantidadeAtual": 0, "quantidadeTotal": 500 },
+          { "nome": "Voucher of Nulgath (non-mem)", "quantidadeAtual": 0, "quantidadeTotal": 20 },
+          { "nome": "Totem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 15 },
+          { "nome": "Relic of Chaos", "quantidadeAtual": 0, "quantidadeTotal": 1 },
+          { "nome": "The Nation's Spikes", "quantidadeAtual": 0, "quantidadeTotal": 1 }
+        ]
+      },
+      {
+        "numero": 2,
+        "titulo": "Passo 2: Void Crystal B",
+        "descricao": "Coleta dos materiais e itens do set para o segundo cristal.",
+        "requisitos": [
+          { "nome": "Blood Gem of the Archfiend", "quantidadeAtual": 0, "quantidadeTotal": 100 },
+          { "nome": "Diamond of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 200 },
+          { "nome": "Gem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 500 },
+          { "nome": "Tainted Gem", "quantidadeAtual": 0, "quantidadeTotal": 500 },
+          { "nome": "Dark Crystal Shard", "quantidadeAtual": 0, "quantidadeTotal": 500 },
+          { "nome": "Voucher of Nulgath (non-mem)", "quantidadeAtual": 0, "quantidadeTotal": 20 },
+          { "nome": "Totem of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 15 },
+          { "nome": "Blood Plate", "quantidadeAtual": 0, "quantidadeTotal": 1 }
+        ]
+      },
+      {
+        "numero": 3,
+        "titulo": "Passo 3: Roentgenium of Nulgath (Diárias)",
+        "descricao": "Farm diário necessário para acumular os 15 Roentgeniums.",
+        "requisitos": [
+          { "nome": "Roentgenium of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 15, "isDaily": true }
+        ]
+      }
+    ]
+  }
+]
