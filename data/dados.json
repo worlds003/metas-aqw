@@ -14,9 +14,12 @@
             "nome": "Blood Gem of the Archfiend", 
             "quantidadeAtual": 0, 
             "quantidadeTotal": 100,
-            "lugar": "tercessuinotlim",
-            "npc": "Archfiend Larvae",
-            "quest": "Swindle Bilbo's Stuff"
+            "lugar": "sevencircleswar",
+            "npc": "Archfiend",
+            "quest": "Kiss the Void",
+            "requisitos": [
+              { "nome": "Unidentified 10", "quantidadeAtual": 0, "quantidadeTotal": 30, "lugar": "tercessuinotlim", "npc": "Archfiend Larvae", "quest": "Swindle Bilbo's Stuff" }
+            ]
           },
           { 
             "nome": "Diamond of Nulgath", 
@@ -24,7 +27,10 @@
             "quantidadeTotal": 200,
             "lugar": "tercessuinotlim",
             "npc": "Diamond Operation",
-            "quest": "Diamond Operation"
+            "quest": "Diamond Operation",
+            "requisitos": [
+              { "nome": "Essence of Nulgath", "quantidadeAtual": 0, "quantidadeTotal": 10, "lugar": "tercessuinotlim", "npc": "Larvae", "quest": "Diamond Operation" }
+            ]
           },
           { 
             "nome": "Gem of Nulgath", 
@@ -32,7 +38,10 @@
             "quantidadeTotal": 500,
             "lugar": "tercessuinotlim",
             "npc": "Polish Pet",
-            "quest": "The Assistant"
+            "quest": "The Assistant",
+            "requisitos": [
+              { "nome": "Tainted Gem", "quantidadeAtual": 0, "quantidadeTotal": 1, "lugar": "tercessuinotlim", "npc": "Archfiend Larvae", "quest": "Swindle Bilbo's Stuff" }
+            ]
           },
           { 
             "nome": "Tainted Gem", 
@@ -40,7 +49,10 @@
             "quantidadeTotal": 500,
             "lugar": "tercessuinotlim",
             "npc": "Archfiend Larvae",
-            "quest": "Swindle Bilbo's Stuff"
+            "quest": "Swindle Bilbo's Stuff",
+            "requisitos": [
+              { "nome": "Dark Crystal Shard", "quantidadeAtual": 0, "quantidadeTotal": 1, "lugar": "tercessuinotlim", "npc": "Archfiend Larvae", "quest": "Swindle Bilbo's Stuff" }
+            ]
           },
           { 
             "nome": "Dark Crystal Shard", 
@@ -64,7 +76,10 @@
             "quantidadeTotal": 15,
             "lugar": "tercessuinotlim",
             "npc": "Terrarium",
-            "quest": "The Hard Core Metal"
+            "quest": "The Hard Core Metal",
+            "requisitos": [
+              { "nome": "Lump of Coal", "quantidadeAtual": 0, "quantidadeTotal": 1, "lugar": "aqwespania", "npc": "Coal", "quest": "Drop" }
+            ]
           },
           { 
             "nome": "Relic of Chaos", 
@@ -93,9 +108,9 @@
             "nome": "Blood Gem of the Archfiend", 
             "quantidadeAtual": 0, 
             "quantidadeTotal": 100,
-            "lugar": "tercessuinotlim",
-            "npc": "Archfiend Larvae",
-            "quest": "Swindle Bilbo's Stuff"
+            "lugar": "sevencircleswar",
+            "npc": "Archfiend",
+            "quest": "Kiss the Void"
           },
           { 
             "nome": "Diamond of Nulgath", 
