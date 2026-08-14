@@ -187,7 +187,7 @@
 
         async function loadAqwDatabase() {
             try {
-                const response = await fetch('dados.json');
+                const response = await fetch('data/dados.json');
                 const data = await response.json();
                 
                 const itemsList = Array.isArray(data) ? data : (data.metas || data.items || Object.values(data));
