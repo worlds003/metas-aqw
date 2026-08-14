@@ -115,7 +115,7 @@
         <!-- Formulário para Nova Meta + Presets -->
         <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
             <form id="task-form" class="flex gap-2">
-                <input type="text" id="task-input" placeholder="Nova meta principal (ex: Void Highlord, Legion DoomKnight)..." required
+                <input type="text" id="task-input" placeholder="Nova meta principal (ex: Void Highlord, ArchFiend, Scarlet Sorceress)..." required
                     class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-plus text-xs"></i> Criar
@@ -124,7 +124,7 @@
 
             <div class="flex items-center gap-2 pt-2 border-t border-zinc-800">
                 <span class="text-[11px] font-medium text-zinc-400 flex items-center gap-1">
-                    <i class="fa-solid fa-bolt text-indigo-400"></i> Presets:
+                    <i class="fa-solid fa-bolt text-indigo-400"></i> Presets Rápido:
                 </span>
                 <div class="flex gap-1.5 flex-wrap">
                     <button type="button" onclick="loadPreset('vhl')" class="text-[11px] bg-zinc-950 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded border border-zinc-800 transition">
@@ -172,6 +172,172 @@
         let currentUser = null;
         let tasks = [];
         let currentFilter = 'all';
+
+        // 📚 BANCO DE DADOS INTELIGENTE DE CLASSES E ITEMS AQW
+        const aqwDatabase = {
+            "scarlet sorceress": {
+                title: "Scarlet Sorceress (Filipe /join towerofdoom)",
+                subtasks: [
+                    {
+                        title: "Farm & Requisitos",
+                        items: [
+                            { title: "Rank 10 TowerofDoom", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
+                            { title: "Blood Sorceress Class", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "deathknight lord": {
+                title: "DeathKnight Lord (/join bonecastle)",
+                subtasks: [
+                    {
+                        title: "Quests Diárias (Bonecastle)",
+                        items: [
+                            { title: "Shadow Seal (Daily Quest)", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: true, completed: false },
+                            { title: "Bone Castle Token", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: true, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "archfiend": {
+                title: "ArchFiend",
+                subtasks: [
+                    {
+                        title: "Reagentes de Fiend",
+                        items: [
+                            { title: "Fiend Token", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false },
+                            { title: "Diamond of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
+                            { title: "Blood Gem of the Archfiend", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "archmage": {
+                title: "ArchMage",
+                subtasks: [
+                    {
+                        title: "Unbound Essences & Books",
+                        items: [
+                            { title: "Unbound Thread", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false },
+                            { title: "Book of Arcana", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Elemental Ink", hasQuantity: true, currentQty: 0, totalQty: 1000, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "stone crusher": {
+                title: "StoneCrusher",
+                subtasks: [
+                    {
+                        title: "Reputações Necessárias",
+                        items: [
+                            { title: "Rank 10 Mythsong", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
+                            { title: "Rank 10 Brightoak", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
+                            { title: "Rank 10 Arcangrove", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "stonecrusher": {
+                title: "StoneCrusher",
+                subtasks: [
+                    {
+                        title: "Reputações Necessárias",
+                        items: [
+                            { title: "Rank 10 Mythsong", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
+                            { title: "Rank 10 Brightoak", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
+                            { title: "Rank 10 Arcangrove", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "shadowscythe general": {
+                title: "ShadowScythe General",
+                subtasks: [
+                    {
+                        title: "Tokens de Batalha",
+                        items: [
+                            { title: "ShadowShield (Daily Quest)", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: true, completed: false },
+                            { title: "Daily Quest: ShadowScythe General", hasQuantity: true, currentQty: 0, totalQty: 50, isDaily: true, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "martial artist": {
+                title: "Martial Artist",
+                subtasks: [
+                    {
+                        title: "Treinamento & Insígnias",
+                        items: [
+                            { title: "Martial Badge", hasQuantity: true, currentQty: 0, totalQty: 50, isDaily: false, completed: false },
+                            { title: "Rank 10 Yokai", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "arch paladin": {
+                title: "ArchPaladin",
+                subtasks: [
+                    {
+                        title: "Proof of Goodness & Bosses",
+                        items: [
+                            { title: "Proof of Goodness", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Sacred Token", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Paladin Class (Rank 10)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "archpaladin": {
+                title: "ArchPaladin",
+                subtasks: [
+                    {
+                        title: "Proof of Goodness & Bosses",
+                        items: [
+                            { title: "Proof of Goodness", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Sacred Token", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Paladin Class (Rank 10)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "hollowborn vindicator": {
+                title: "Hollowborn Vindicator",
+                subtasks: [
+                    {
+                        title: "Reagentes Hollowborn",
+                        items: [
+                            { title: "Hollowborn Token", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false },
+                            { title: "Vindicator's Seal", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: true, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "king's echo": {
+                title: "King's Echo",
+                subtasks: [
+                    {
+                        title: "Essências do Rei",
+                        items: [
+                            { title: "King's Echo Token", hasQuantity: true, currentQty: 0, totalQty: 50, isDaily: false, completed: false },
+                            { title: "Royal Crown Fragment", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "kings echo": {
+                title: "King's Echo",
+                subtasks: [
+                    {
+                        title: "Essências do Rei",
+                        items: [
+                            { title: "King's Echo Token", hasQuantity: true, currentQty: 0, totalQty: 50, isDaily: false, completed: false },
+                            { title: "Royal Crown Fragment", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            }
+        };
 
         // ⏱️ RELÓGIO SERVIDOR AQW (EST)
         function updateAQWServerTime() {
@@ -321,8 +487,27 @@
             }
         };
 
+        // 🚀 FUNÇÃO ADDTASK ATUALIZADA COM O BANCO INTELIGENTE DE PRESETS
         window.addTask = function(title) {
-            tasks.push({ id: Date.now(), title, subtasks: [] });
+            const key = title.trim().toLowerCase();
+
+            if (aqwDatabase[key]) {
+                const preset = aqwDatabase[key];
+                tasks.push({
+                    id: Date.now(),
+                    title: preset.title,
+                    subtasks: preset.subtasks.map((sub, sIdx) => ({
+                        id: Date.now() + sIdx + 1,
+                        title: sub.title,
+                        items: sub.items.map((item, iIdx) => ({
+                            ...item,
+                            id: Date.now() + (sIdx * 10) + iIdx + 100
+                        }))
+                    }))
+                });
+            } else {
+                tasks.push({ id: Date.now(), title: title.trim(), subtasks: [] });
+            }
             saveAndRender();
         };
 
