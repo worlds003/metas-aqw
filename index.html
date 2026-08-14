@@ -1,197 +1,443 @@
-// ==========================================
-// 1. BASE DE DADOS DOS PRESETS E WIKI (IDEIAS 1, 2 E 3)
-// ==========================================
-const PRESETS_DATABASE = {
-  "Void Highlord (VHL)": {
-    dificuldade: "Hardcore",
-    isDaily: true,
-    descricao: "Uma das classes solo mais poderosas do jogo. Requer itens raros do Nulgath.",
-    requisitos: [
-      {
-        nome: "Roentgenium of Nulgath",
-        qtdNecessaria: 15,
-        local: "/join tercessuinotlim",
-        quest: "Void Highlord's Challenge (ID: 5660)",
-        daily: false,
-        dicaWiki: "Drop garantido ao entregar a quest. Requer 1x Void Crystal A e 1x Void Crystal B."
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>METAS NO AQW</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-inner: #0f172a;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --daily-bg: #d97706;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: #38bdf8;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-muted);
+    }
+
+    /* Seção de Presets */
+    .presets-container {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 30px;
+    }
+
+    .presets-container h2 {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      color: #f43f5e;
+    }
+
+    .preset-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-preset {
+      background-color: #334155;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-preset:hover {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Lista de Metas */
+    .metas-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .meta-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .meta-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .meta-header h3 {
+      font-size: 1.4rem;
+      color: #38bdf8;
+    }
+
+    .meta-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 15px;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .badge-hardcore { background-color: #ef4444; color: #fff; }
+    .badge-extrema { background-color: #9333ea; color: #fff; }
+    .badge-média { background-color: #eab308; color: #000; }
+    .badge-fácil { background-color: #22c55e; color: #fff; }
+
+    /* Requisitos */
+    .requisitos-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .requisito-item {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 15px;
+    }
+
+    .requisito-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .requisito-main label {
+      cursor: pointer;
+      flex-grow: 1;
+    }
+
+    .qtd {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .badge-daily {
+      background-color: var(--daily-bg);
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-left: 6px;
+    }
+
+    .btn-wiki-toggle {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: #818cf8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-wiki-toggle:hover {
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Painel Wiki */
+    .wiki-panel {
+      margin-top: 10px;
+      padding: 12px;
+      background-color: #1e1b4b;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .wiki-panel code {
+      background-color: #0f172a;
+      color: #4ade80;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🎯 METAS NO AQW</h1>
+      <p>Gerencie seus farms do AdventureQuest Worlds com dados integrados da Wiki</p>
+    </header>
+
+    <!-- Painel de Presets -->
+    <div class="presets-container">
+      <h2>🚀 Adicionar Meta Pronta (Preset)</h2>
+      <div class="preset-buttons" id="preset-buttons"></div>
+    </div>
+
+    <!-- Lista de Metas Ativas -->
+    <div class="metas-lista" id="metas-container"></div>
+  </div>
+
+  <script>
+    // 1. BASE DE DADOS DOS PRESETS E WIKI
+    const PRESETS_DATABASE = {
+      "Void Highlord (VHL)": {
+        dificuldade: "Hardcore",
+        isDaily: true,
+        descricao: "Uma das classes solo mais poderosas do jogo. Requer itens raros do Nulgath.",
+        requisitos: [
+          {
+            nome: "Roentgenium of Nulgath",
+            qtdNecessaria: 15,
+            local: "/join tercessuinotlim",
+            quest: "Void Highlord's Challenge (ID: 5660)",
+            daily: false,
+            dicaWiki: "Drop garantido ao entregar a quest. Requer 1x Void Crystal A e 1x Void Crystal B."
+          },
+          {
+            nome: "Elder's Blood",
+            qtdNecessaria: 15,
+            local: "/join arcangrove",
+            quest: "Gorillaphant Stalker (ID: 843)",
+            daily: true,
+            dicaWiki: "Quest diária! Você só pode obter 1 por dia. Junte 15 no total."
+          },
+          {
+            nome: "Void Crystal A",
+            qtdNecessaria: 1,
+            local: "/join tercessuinotlim",
+            quest: "Nulgath (Shaping) (ID: 5657)",
+            daily: false,
+            dicaWiki: "Requer Unidentified 10, Gem of Nulgath e Tainted Gems."
+          },
+          {
+            nome: "Void Crystal B",
+            qtdNecessaria: 1,
+            local: "/join tercessuinotlim",
+            quest: "Nulgath (Forging) (ID: 5658)",
+            daily: false,
+            dicaWiki: "Requer Diamond of Nulgath, Blood Gem e Emblem of Nulgath."
+          }
+        ]
       },
-      {
-        nome: "Elder's Blood",
-        qtdNecessaria: 15,
-        local: "/join arcangrove",
-        quest: "Gorillaphant Stalker (ID: 843)",
-        daily: true,
-        dicaWiki: "Quest diária! Você só pode obter 1 por dia. Junte 15 no total."
+      "Lord of Order (LoO)": {
+        dificuldade: "Média",
+        isDaily: true,
+        descricao: "Classe de suporte essencial para todas as Ultras do jogo.",
+        requisitos: [
+          {
+            nome: "Heart of Order",
+            qtdNecessaria: 1,
+            local: "/join ultraezrajal",
+            quest: "Heart of Order (Daily) (ID: 7156)",
+            daily: true,
+            dicaWiki: "Complete as 10 quests da saga do Lord of Order em /join battleoff."
+          }
+        ]
       },
-      {
-        nome: "Void Crystal A",
-        qtdNecessaria: 1,
-        local: "/join tercessuinotlim",
-        quest: "Nulgath (Shaping) (ID: 5657)",
-        daily: false,
-        dicaWiki: "Requer Unidentified 10, Gem of Nulgath e Tainted Gems."
+      "Verus DoomKnight": {
+        dificuldade: "Hardcore",
+        isDaily: true,
+        descricao: "Classe end-game focada em debuff e dano físico elevado.",
+        requisitos: [
+          {
+            nome: "Doom-Blade Specimen",
+            qtdNecessaria: 1,
+            local: "/join terminafang",
+            quest: "Verus DoomKnight Quests (ID: 9412)",
+            daily: true,
+            dicaWiki: "Necessário completar as diárias de chave de fenda e essência de escuridão."
+          }
+        ]
       },
-      {
-        nome: "Void Crystal B",
-        qtdNecessaria: 1,
-        local: "/join tercessuinotlim",
-        quest: "Nulgath (Forging) (ID: 5658)",
-        daily: false,
-        dicaWiki: "Requer Diamond of Nulgath, Blood Gem e Emblem of Nulgath."
+      "Forge - Valiance": {
+        dificuldade: "Hardcore",
+        isDaily: false,
+        descricao: "Aprimoramento de arma essencial para maximizar os atributos.",
+        requisitos: [
+          {
+            nome: "Fire Awe / Ice Awe / Dark Awe",
+            qtdNecessaria: 1,
+            local: "/join museum",
+            quest: "Valiance Enhancement (ID: 8732)",
+            daily: false,
+            dicaWiki: "Exige BLoD completo, Lord of Order e Arcana Invoker."
+          }
+        ]
+      },
+      "Legion DoomKnight": {
+        dificuldade: "Fácil",
+        isDaily: false,
+        descricao: "Excelente classe solo para quem faz parte da Dage's Legion.",
+        requisitos: [
+          {
+            nome: "Legion Token",
+            qtdNecessaria: 2000,
+            local: "/join legionarena ou /join fotia",
+            quest: "First Header / Spring Cleaning",
+            daily: false,
+            dicaWiki: "Farm em área com Shogun Paragon Pet facilita o processo."
+          }
+        ]
+      },
+      "NSoD (Necrotic Sword of Doom)": {
+        dificuldade: "Extrema",
+        isDaily: true,
+        descricao: "Arma com +51% de dano em todos os monstros do jogo.",
+        requisitos: [
+          {
+            nome: "Void Aura",
+            qtdNecessaria: 7500,
+            local: "/join shadowfall",
+            quest: "Commanding Shadow Essences (ID: 4439)",
+            daily: false,
+            dicaWiki: "Membros (VIP) e detentores de SDkA possuem quests diárias muito mais rápidas."
+          }
+        ]
       }
-    ]
-  },
-  "Lord of Order (LoO)": {
-    dificuldade: "Média",
-    isDaily: true,
-    descricao: "Classe de suporte essencial para todas as Ultras do jogo.",
-    requisitos: [
-      {
-        nome: "Heart of Order",
-        qtdNecessaria: 1,
-        local: "/join ultraezrajal",
-        quest: "Heart of Order (Daily) (ID: 7156)",
-        daily: true,
-        dicaWiki: "Complete as 10 quests da saga do Lord of Order em /join battleoff."
-      }
-    ]
-  },
-  "Verus DoomKnight": {
-    dificuldade: "Hardcore",
-    isDaily: true,
-    descricao: "Classe end-game focada em debuff e dano físico elevado.",
-    requisitos: [
-      {
-        nome: "Doom-Blade Specimen",
-        qtdNecessaria: 1,
-        local: "/join terminafang",
-        quest: "Verus DoomKnight Quests (ID: 9412)",
-        daily: true,
-        dicaWiki: "Necessário completar as diárias de chave de fenda e essência de escuridão."
-      }
-    ]
-  },
-  "Forge - Valiance": {
-    dificuldade: "Hardcore",
-    isDaily: false,
-    descricao: "Aprimoramento de arma essential para maximizar o Stats geral do personagem.",
-    requisitos: [
-      {
-        nome: "Fire Awe / Ice Awe / Dark Awe",
-        qtdNecessaria: 1,
-        local: "/join museum",
-        quest: "Valiance Enhancement (ID: 8732)",
-        daily: false,
-        dicaWiki: "Exige ter completado o BLoD e possuir a classe Lord of Order e Arcana Invoker."
-      }
-    ]
-  },
-  "Legion DoomKnight": {
-    dificuldade: "Fácil / Média",
-    isDaily: false,
-    descricao: "Excelente classe solo para quem faz parte da Dage's Legion.",
-    requisitos: [
-      {
-        nome: "Legion Token",
-        qtdNecessaria: 2000,
-        local: "/join legionarena ou /join fotia",
-        quest: "First Header / Spring Cleaning",
-        daily: false,
-        dicaWiki: "Farm em área com Shogun Paragon Pet facilita imensamente o processo."
-      }
-    ]
-  },
-  "NSoD (Necrotic Sword of Doom)": {
-    dificuldade: "Extrema",
-    isDaily: true,
-    descricao: "Arma com +51% de dano em todos os monstros do jogo.",
-    requisitos: [
-      {
-        nome: "Void Aura",
-        qtdNecessaria: 7500,
-        local: "/join shadowfall",
-        quest: "Commanding Shadow Essences (ID: 4439)",
-        daily: false,
-        dicaWiki: "Membros (VIP) e detentores de SDkA possuem quests diárias muito mais rápidas."
-      }
-    ]
-  }
-};
+    };
 
-// ==========================================
-// 2. LÓGICA DE GERAÇÃO E INTERFACE
-// ==========================================
+    let metasAtivas = [];
 
-// Função para aplicar um Preset selecionado
-function carregarPreset(nomePreset) {
-  const data = PRESETS_DATABASE[nomePreset];
-  if (!data) return;
-
-  const novaMeta = {
-    id: Date.now(),
-    titulo: nomePreset,
-    dificuldade: data.dificuldade,
-    descricao: data.descricao,
-    concluida: false,
-    requisitos: data.requisitos.map(req => ({
-      ...req,
-      qtdAtual: 0,
-      concluido: false
-    }))
-  };
-
-  salvarEMostrarMeta(novaMeta);
-}
-
-// Renderizador HTML do Card com abas de informação da Wiki incorporadas
-function gerarHTMLCardMeta(meta) {
-  return `
-    <div class="meta-card" id="meta-${meta.id}">
-      <div class="meta-header">
-        <h3>${meta.titulo}</h3>
-        <span class="badge badge-${meta.dificuldade.toLowerCase()}">${meta.dificuldade}</span>
-      </div>
-      <p class="meta-desc">${meta.descricao || ''}</p>
+    // Renderiza os botões de Presets na tela
+    function carregarBotoesPresets() {
+      const container = document.getElementById('preset-buttons');
+      container.innerHTML = '';
       
-      <div class="requisitos-lista">
-        ${meta.requisitos.map((req, idx) => `
-          <div class="requisito-item ${req.concluido ? 'concluido' : ''}">
-            <div class="requisito-main">
-              <input type="checkbox" 
-                     id="req-${meta.id}-${idx}" 
-                     ${req.concluido ? 'checked' : ''} 
-                     onchange="toggleRequisito(${meta.id}, ${idx})">
-              
-              <label for="req-${meta.id}-${idx}">
-                <strong>${req.nome}</strong> 
-                <span class="qtd">(${req.qtdAtual || 0}/${req.qtdNecessaria})</span>
-                ${req.daily ? '<span class="badge-daily">DAILY</span>' : ''}
-              </label>
-              
-              <button class="btn-wiki-toggle" onclick="toggleWikiDetails('${meta.id}-${idx}')">
-                📖 Ver dados da Wiki
-              </button>
-            </div>
+      Object.keys(PRESETS_DATABASE).forEach(nome => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-preset';
+        btn.innerText = `+ ${nome}`;
+        btn.onclick = () => adicionarPreset(nome);
+        container.appendChild(btn);
+      });
+    }
 
-            <!-- Painel Informativo da Wiki Integrada (Ideia 3) -->
-            <div class="wiki-panel" id="wiki-${meta.id}-${idx}" style="display: none;">
-              <div class="wiki-content">
-                <p>📍 <strong>Local:</strong> <code>${req.local}</code></p>
-                <p>📜 <strong>Quest:</strong> ${req.quest}</p>
-                <p>💡 <strong>Dica de Farm:</strong> ${req.dicaWiki}</p>
-              </div>
+    // Adiciona uma meta da base de dados
+    function adicionarPreset(nomePreset) {
+      const data = PRESETS_DATABASE[nomePreset];
+      if (!data) return;
+
+      const novaMeta = {
+        id: Date.now(),
+        titulo: nomePreset,
+        dificuldade: data.dificuldade,
+        descricao: data.descricao,
+        requisitos: data.requisitos.map(req => ({
+          ...req,
+          qtdAtual: 0,
+          concluido: false
+        }))
+      };
+
+      metasAtivas.push(novaMeta);
+      renderizarMetas();
+    }
+
+    // Alternar exibição do painel da Wiki
+    function toggleWikiDetails(panelId) {
+      const panel = document.getElementById(`wiki-${panelId}`);
+      if (panel) {
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    // Renderiza o HTML das metas
+    function renderizarMetas() {
+      const container = document.getElementById('metas-container');
+      container.innerHTML = '';
+
+      metasAtivas.forEach(meta => {
+        const cardHTML = `
+          <div class="meta-card">
+            <div class="meta-header">
+              <h3>${meta.titulo}</h3>
+              <span class="badge badge-${meta.dificuldade.toLowerCase()}">${meta.dificuldade}</span>
+            </div>
+            <p class="meta-desc">${meta.descricao}</p>
+            
+            <div class="requisitos-lista">
+              ${meta.requisitos.map((req, idx) => `
+                <div class="requisito-item">
+                  <div class="requisito-main">
+                    <input type="checkbox" id="req-${meta.id}-${idx}">
+                    <label for="req-${meta.id}-${idx}">
+                      <strong>${req.nome}</strong> 
+                      <span class="qtd">(${req.qtdAtual}/${req.qtdNecessaria})</span>
+                      ${req.daily ? '<span class="badge-daily">DAILY</span>' : ''}
+                    </label>
+                    <button class="btn-wiki-toggle" onclick="toggleWikiDetails('${meta.id}-${idx}')">
+                      📖 Ver dados da Wiki
+                    </button>
+                  </div>
+
+                  <div class="wiki-panel" id="wiki-${meta.id}-${idx}" style="display: none;">
+                    <p>📍 <strong>Local:</strong> <code>${req.local}</code></p>
+                    <p>📜 <strong>Quest:</strong> ${req.quest}</p>
+                    <p>💡 <strong>Dica de Farm:</strong> ${req.dicaWiki}</p>
+                  </div>
+                </div>
+              `).join('')}
             </div>
           </div>
-        `).join('')}
-      </div>
-    </div>
-  `;
-}
+        `;
+        container.innerHTML += cardHTML;
+      });
+    }
 
-// Função para expandir/recolher as informações da Wiki no item
-function toggleWikiDetails(panelId) {
-  const panel = document.getElementById(`wiki-${panelId}`);
-  if (panel) {
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  }
-}
+    // Inicialização
+    carregarBotoesPresets();
+  </script>
+</body>
+</html>
