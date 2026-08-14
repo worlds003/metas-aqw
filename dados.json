@@ -1,0 +1,25 @@
+{
+  "quests": [
+    {
+      "titulo": "Cristais do Void (/join tercessuinotlim)",
+      "itens": [
+        {
+          "nome": "Void Crystal A",
+          "quantidade": 1,
+          "subRequisitos": [
+            {
+              "nome": "Unidentified 10",
+              "quantidade": 200,
+              "ondeFarmar": "Nulgath (Larvae)"
+            },
+            {
+              "nome": "Gem of Nulgath",
+              "quantidade": 150,
+              "ondeFarmar": "Voucher Item: Totem"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
