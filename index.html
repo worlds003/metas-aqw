@@ -11,106 +11,252 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen py-10 px-4 font-sans">
 
-    <div class="max-w-3xl mx-auto space-y-6">
+    <!-- TELA DE LOGIN / CADASTRO -->
+    <div id="auth-container" class="max-w-md mx-auto bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl space-y-4 pt-20">
+        <h2 class="text-3xl font-bold text-center text-indigo-400 flex items-center justify-center gap-3">
+            <i class="fa-solid fa-user-shield"></i> METAS NO AQW
+        </h2>
+        <p class="text-sm text-slate-400 text-center pb-4">Faça login ou cadastre-se para salvar suas metas na nuvem e acessar de qualquer lugar.</p>
+        
+        <form id="auth-form" class="space-y-4">
+            <div>
+                <label class="text-xs text-slate-300 font-medium">E-mail</label>
+                <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+                <label class="text-xs text-slate-300 font-medium">Senha (mínimo 6 caracteres)</label>
+                <input type="password" id="auth-password" required placeholder="******" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div class="flex gap-3 pt-3">
+                <button type="button" onclick="handleLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-md">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                </button>
+                <button type="button" onclick="handleRegister()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 rounded-lg text-sm transition">
+                    <i class="fa-solid fa-user-plus"></i> Cadastrar
+                </button>
+            </div>
+        </form>
+        <div id="auth-error" class="text-xs text-red-400 text-center hidden bg-red-500/10 p-2 rounded border border-red-500/20"></div>
+    </div>
+
+    <!-- PAINEL PRINCIPAL (SÓ APARECE APÓS LOGIN) -->
+    <div id="app-container" class="max-w-3xl mx-auto space-y-6 hidden">
         <!-- Cabeçalho -->
-        <header class="text-center space-y-2">
-            <h1 class="text-3xl font-bold tracking-tight text-indigo-400 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-list-check"></i> METAS NO AQW
-            </h1>
-            <p class="text-slate-400 text-sm">Gerencie suas metas de itens, classes e requisitos com contagem de quantidades.</p>
+        <header class="flex justify-between items-center bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-400 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> METAS NO AQW
+                </h1>
+                <p id="user-email-display" class="text-xs text-slate-400 mt-1"></p>
+            </div>
+            <button onclick="handleLogout()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs px-4 py-2 rounded-lg border border-red-500/30 transition flex items-center gap-1.5 font-medium">
+                <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
+            </button>
         </header>
 
         <!-- Formulário para Nova Meta Principal -->
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg hover:border-slate-600 transition">
             <form id="task-form" class="flex gap-2">
                 <input type="text" id="task-input" placeholder="Nova meta principal (ex: Void Highlord)..." required
                     class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
-                <button type="submit" 
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center gap-1">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition flex items-center gap-1.5 shadow">
                     <i class="fa-solid fa-plus"></i> Adicionar Meta
                 </button>
             </form>
         </div>
 
         <!-- Lista de Tarefas -->
-        <main id="tasks-container" class="space-y-4">
+        <main id="tasks-container" class="space-y-4 pb-10">
             <!-- As tarefas serão inseridas dinamicamente via JS -->
+            <div class="text-center py-20 text-slate-600">
+                <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
+                <p>Carregando suas metas...</p>
+            </div>
         </main>
     </div>
 
-    <!-- Script da Aplicação -->
-    <script>
-        let tasks = JSON.parse(localStorage.getItem('metas_aqw_tasks_v3')) || [
-            {
-                id: 1,
-                title: "Exemplo: Void Highlord",
-                subtasks: [
-                    {
-                        id: 101,
-                        title: "Roentgenium of Nulgath (15x)",
-                        items: [
-                            { id: 1001, title: "Tainted Gem", hasQuantity: true, currentQty: 20, totalQty: 50, completed: false },
-                            { id: 1002, title: "Black Knight Orb", hasQuantity: false, currentQty: 0, totalQty: 1, completed: true }
-                        ]
-                    }
-                ]
-            }
-        ];
+    <!-- Script da Aplicação (Módulo Firebase) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        function saveAndRender() {
-            localStorage.setItem('metas_aqw_tasks_v3', JSON.stringify(tasks));
-            renderTasks();
+        // --- CONFIGURAÇÃO DO SEU PROJETO FIREBASE (JÁ INTEGRADA!) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5JO0TndQiMREXKEMzXE3h3UuunRaVPPg",
+            authDomain: "metas-aqw.firebaseapp.com",
+            projectId: "metas-aqw",
+            storageBucket: "metas-aqw.firebasestorage.app",
+            messagingSenderId: "366374848500",
+            appId: "1:366374848500:web:cd313a2b95e344bedddba1",
+            measurementId: "G-W5DNRL8REZ"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let tasks = [];
+
+        // --- GERENCIAMENTO DE ESTADO DE AUTENTICAÇÃO ---
+        onAuthStateChanged(auth, async (user) => {
+            const authContainer = document.getElementById('auth-container');
+            const appContainer = document.getElementById('app-container');
+            const emailDisplay = document.getElementById('user-email-display');
+
+            if (user) {
+                // Usuário está logado
+                currentUser = user;
+                authContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                emailDisplay.innerText = `Conectado como: ${user.email}`;
+                await loadUserTasks(); // Carrega as tarefas da nuvem
+            } else {
+                // Usuário está deslogado
+                currentUser = null;
+                authContainer.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+                tasks = [];
+                document.getElementById('tasks-container').innerHTML = ''; // Limpa a tela
+            }
+        });
+
+        // --- FUNÇÕES DE LOGIN, CADASTRO E LOGOUT ---
+        window.handleLogin = async () => {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errDiv = document.getElementById('auth-error');
+            errDiv.classList.add('hidden');
+
+            if (!email || !password) {
+                errDiv.innerText = "Preencha e-mail e senha.";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                console.error(err);
+                errDiv.innerText = "Erro ao entrar: Verifique e-mail/senha ou cadastre-se.";
+                errDiv.classList.remove('hidden');
+            }
+        };
+
+        window.handleRegister = async () => {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errDiv = document.getElementById('auth-error');
+            errDiv.classList.add('hidden');
+
+            if (!email || password.length < 6) {
+                errDiv.innerText = "E-mail inválido ou senha com menos de 6 caracteres.";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                // O onAuthStateChanged vai logar automaticamente após o cadastro
+            } catch (err) {
+                console.error(err);
+                errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
+                errDiv.classList.remove('hidden');
+            }
+        };
+
+        window.handleLogout = () => signOut(auth);
+
+
+        // --- FUNÇÕES DO BANCO DE DADOS (FIRESTORE) ---
+        async function loadUserTasks() {
+            if (!currentUser) return;
+            const container = document.getElementById('tasks-container');
+            
+            try {
+                const docRef = doc(db, "users", currentUser.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    tasks = docSnap.data().tasks || [];
+                } else {
+                    // Primeiro acesso, cria o documento vazio
+                    tasks = [];
+                    await setDoc(docRef, { tasks: [] });
+                }
+                renderTasks();
+            } catch (err) {
+                console.error("Erro ao carregar tarefas:", err);
+                container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados da nuvem. Tentando novamente...</div>`;
+                // Tenta recarregar após 5 segundos em caso de erro de rede
+                setTimeout(loadUserTasks, 5000);
+            }
         }
 
-        // --- FUNÇÕES DE NÍVEL 1: META PRINCIPAL ---
-        function addTask(title) {
+        async function saveAndRender() {
+            renderTasks(); // Atualiza a tela imediatamente (interface fluida)
+            
+            if (!currentUser) return;
+            
+            // Salva na nuvem em segundo plano
+            try {
+                const docRef = doc(db, "users", currentUser.uid);
+                await setDoc(docRef, { tasks: tasks }, { merge: true });
+            } catch (err) {
+                console.error("Erro ao salvar na nuvem:", err);
+                // Opcional: mostrar um aviso discreto de "Não sincronizado" na tela
+            }
+        }
+
+
+        // --- LÓGICA DE MANIPULAÇÃO DAS TAREFAS (UI e Dados Locais) ---
+        window.addTask = function(title) {
             tasks.push({ id: Date.now(), title, subtasks: [] });
             saveAndRender();
-        }
+        };
 
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            saveAndRender();
-        }
+        window.deleteTask = function(id) {
+            if(confirm("Tem certeza que deseja excluir esta meta principal e todas as suas quests?")) {
+                tasks = tasks.filter(t => t.id !== id);
+                saveAndRender();
+            }
+        };
 
-        // --- FUNÇÕES DE NÍVEL 2: QUEST / SUBTAREFA ---
-        function addSubtask(taskId, title) {
+        window.addSubtask = function(taskId, title) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.subtasks.push({ id: Date.now(), title, items: [] });
                 saveAndRender();
             }
-        }
+        };
 
-        function deleteSubtask(taskId, subtaskId) {
+        window.deleteSubtask = function(taskId, subtaskId) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
                 saveAndRender();
             }
-        }
+        };
 
-        // --- FUNÇÕES DE NÍVEL 3: ITEM / REQUISITO ---
-        function addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty) {
+        window.addItem = function(taskId, subtaskId, title, hasQuantity, currentQty, totalQty) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(s => s.id === subtaskId);
                 if (subtask) {
                     const completed = hasQuantity ? (currentQty >= totalQty) : false;
                     subtask.items.push({
-                        id: Date.now(),
-                        title,
-                        hasQuantity,
+                        id: Date.now(), title, hasQuantity,
                         currentQty: hasQuantity ? currentQty : 0,
-                        totalQty: hasQuantity ? totalQty : 1,
-                        completed
+                        totalQty: hasQuantity ? totalQty : 1, completed
                     });
                     saveAndRender();
                 }
             }
-        }
+        };
 
-        function toggleItem(taskId, subtaskId, itemId) {
+        window.toggleItem = function(taskId, subtaskId, itemId) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(s => s.id === subtaskId);
@@ -118,18 +264,14 @@
                     const item = subtask.items.find(i => i.id === itemId);
                     if (item) {
                         item.completed = !item.completed;
-                        if (item.hasQuantity && item.completed) {
-                            item.currentQty = item.totalQty;
-                        } else if (item.hasQuantity && !item.completed) {
-                            item.currentQty = 0;
-                        }
+                        if (item.hasQuantity) item.currentQty = item.completed ? item.totalQty : 0;
                         saveAndRender();
                     }
                 }
             }
-        }
+        };
 
-        function updateItemQuantity(taskId, subtaskId, itemId, newQty) {
+        window.updateItemQuantity = function(taskId, subtaskId, itemId, newQty) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(s => s.id === subtaskId);
@@ -142,9 +284,9 @@
                     }
                 }
             }
-        }
+        };
 
-        function deleteItem(taskId, subtaskId, itemId) {
+        window.deleteItem = function(taskId, subtaskId, itemId) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(s => s.id === subtaskId);
@@ -153,9 +295,9 @@
                     saveAndRender();
                 }
             }
-        }
+        };
 
-        // --- CÁLCULOS DE PROGRESSO POR PORCENTAGEM ---
+        // --- CÁLCULOS DE PROGRESSO E RENDERIZAÇÃO DA INTERFACE ---
         function getItemProgress(item) {
             if (!item.hasQuantity) return item.completed ? 100 : 0;
             if (item.totalQty <= 0) return 0;
@@ -165,134 +307,127 @@
         function getSubtaskProgress(subtask) {
             if (!subtask.items || subtask.items.length === 0) return 0;
             let totalPercent = 0;
-            subtask.items.forEach(item => {
-                totalPercent += getItemProgress(item);
-            });
+            subtask.items.forEach(item => totalPercent += getItemProgress(item));
             return Math.round(totalPercent / subtask.items.length);
         }
 
         function getTaskProgress(task) {
             if (!task.subtasks || task.subtasks.length === 0) return 0;
             let totalPercent = 0;
-            task.subtasks.forEach(sub => {
-                totalPercent += getSubtaskProgress(sub);
-            });
+            task.subtasks.forEach(sub => totalPercent += getSubtaskProgress(sub));
             return Math.round(totalPercent / task.subtasks.length);
         }
 
-        // --- RENDERIZAÇÃO DA TELA ---
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             container.innerHTML = '';
 
             if (tasks.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-10 text-slate-500">
-                        <i class="fa-regular fa-folder-open text-4xl mb-2"></i>
-                        <p>Nenhuma meta cadastrada ainda.</p>
-                    </div>
-                `;
+                    <div class="text-center py-16 bg-slate-800/50 rounded-xl border border-slate-700/50 border-dashed text-slate-500">
+                        <i class="fa-regular fa-folder-open text-5xl mb-4 transition hover:text-indigo-400"></i>
+                        <p class="font-medium">Nenhuma meta cadastrada ainda.</p>
+                        <p class="text-xs mt-1">Use o formulário acima para começar seu farm!</p>
+                    </div>`;
                 return;
             }
 
             tasks.forEach(task => {
                 const mainProgress = getTaskProgress(task);
-
                 const card = document.createElement('div');
-                card.className = "bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-md space-y-4";
+                card.className = "bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-lg space-y-4 hover:border-slate-600 transition";
 
                 card.innerHTML = `
                     <!-- Título da Meta Principal -->
                     <div class="flex items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-crosshairs text-indigo-400"></i>
-                            <h2 class="font-semibold text-lg text-slate-100">${escapeHtml(task.title)}</h2>
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-crosshairs text-indigo-400 text-lg"></i>
+                            <h2 class="font-bold text-xl text-slate-50 tracking-tight">${escapeHtml(task.title)}</h2>
                         </div>
-                        <button onclick="deleteTask(${task.id})" class="text-slate-500 hover:text-red-400 transition p-1" title="Excluir meta">
+                        <button onclick="deleteTask(${task.id})" class="text-slate-500 hover:text-red-400 transition p-1.5 rounded-lg hover:bg-slate-700/50" title="Excluir meta principal">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </div>
 
-                    <!-- Barra de Progresso da Meta -->
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs text-slate-400 font-medium">
-                            <span>Progresso</span>
-                            <span>${mainProgress}%</span>
+                    <!-- Barra de Progresso Geral da Meta -->
+                    <div class="space-y-1.5 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                        <div class="flex justify-between text-xs text-slate-300 font-semibold tracking-wide">
+                            <span>PROGRESSO TOTAL</span>
+                            <span class="text-indigo-300">${mainProgress}%</span>
                         </div>
-                        <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-700/50">
-                            <div class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width: ${mainProgress}%"></div>
+                        <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700/50 shadow-inner">
+                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-400 h-3 rounded-full transition-all duration-500 ease-out" style="width: ${mainProgress}%"></div>
                         </div>
                     </div>
 
-                    <!-- Quests / Subtarefas -->
+                    <!-- Lista de Quests (Subtarefas) -->
                     <div class="space-y-4 pt-2">
                         ${task.subtasks.map(sub => {
                             const subProgress = getSubtaskProgress(sub);
-
                             return `
-                                <div class="bg-slate-900/80 p-3.5 rounded-lg border border-slate-700/70 space-y-3">
+                                <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700 space-y-3.5 shadow-inner">
                                     <!-- Título da Quest -->
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
-                                            <i class="fa-solid fa-angle-right text-xs text-indigo-400"></i>
+                                    <div class="flex items-center justify-between border-b border-slate-700/50 pb-2.5">
+                                        <span class="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                                            <i class="fa-solid fa-chevron-right text-xs text-indigo-400"></i>
                                             ${escapeHtml(sub.title)}
                                         </span>
-                                        <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1">
+                                        <button onclick="deleteSubtask(${task.id}, ${sub.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1 rounded hover:bg-slate-800">
                                             <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
 
                                     <!-- Barra de Progresso da Quest -->
                                     <div class="space-y-1">
-                                        <div class="flex justify-between text-[11px] text-slate-400">
+                                        <div class="flex justify-between text-[11px] text-slate-400 font-medium">
                                             <span>Progresso da Quest</span>
-                                            <span>${subProgress}%</span>
+                                            <span class="text-emerald-400">${subProgress}%</span>
                                         </div>
-                                        <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                                            <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
+                                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                                            <div class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: ${subProgress}%"></div>
                                         </div>
                                     </div>
 
-                                    <!-- Lista de Itens com/sem Quantidades -->
-                                    <div class="space-y-2 pl-2 border-l-2 border-slate-800">
+                                    <!-- Lista de Itens (Requisitos) -->
+                                    <div class="space-y-2 pl-2.5 border-l-2 border-slate-700/50">
                                         ${sub.items.map(item => {
                                             const itemProg = getItemProgress(item);
                                             return `
-                                                <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/40 text-xs space-y-2">
-                                                    <div class="flex items-center justify-between gap-2">
-                                                        <label class="flex items-center gap-2.5 cursor-pointer flex-1 select-none">
+                                                <div class="bg-slate-800/60 p-3 rounded border border-slate-700/40 text-xs space-y-2.5 hover:border-slate-600 transition">
+                                                    <div class="flex items-center justify-between gap-3">
+                                                        <label class="flex items-center gap-3 cursor-pointer flex-1 select-none">
                                                             <input type="checkbox" ${item.completed ? 'checked' : ''} 
                                                                 onchange="toggleItem(${task.id}, ${sub.id}, ${item.id})"
-                                                                class="w-3.5 h-3.5 accent-emerald-500 rounded cursor-pointer">
-                                                            <span class="${item.completed ? 'line-through text-slate-500' : 'text-slate-200'} font-medium">
+                                                                class="w-4 h-4 accent-emerald-500 rounded cursor-pointer bg-slate-900 border-slate-600">
+                                                            <span class="${item.completed ? 'line-through text-slate-500' : 'text-slate-200'} font-medium flex-1">
                                                                 ${escapeHtml(item.title)}
                                                             </span>
                                                         </label>
 
                                                         ${item.hasQuantity ? `
-                                                            <div class="flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 text-slate-300 text-[11px]">
+                                                            <div class="flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-md border border-slate-700 shadow-inner text-[11px]">
                                                                 <input type="number" min="0" max="${item.totalQty}" value="${item.currentQty}"
                                                                     onchange="updateItemQuantity(${task.id}, ${sub.id}, ${item.id}, parseInt(this.value) || 0)"
-                                                                    class="w-12 bg-transparent text-right text-emerald-400 font-bold focus:outline-none">
-                                                                <span class="text-slate-500">/</span>
-                                                                <span>${item.totalQty}</span>
+                                                                    class="w-14 bg-transparent text-right text-emerald-300 font-bold focus:outline-none focus:text-white" title="Quantidade atual (clique para editar)">
+                                                                <span class="text-slate-600">/</span>
+                                                                <span class="text-slate-400 font-medium" title="Quantidade total necessária">${item.totalQty}</span>
                                                             </div>
                                                         ` : ''}
 
-                                                        <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-0.5">
-                                                            <i class="fa-solid fa-xmark"></i>
+                                                        <button onclick="deleteItem(${task.id}, ${sub.id}, ${item.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1 rounded hover:bg-slate-800" title="Remover item">
+                                                            <i class="fa-solid fa-trash-can text-[11px]"></i>
                                                         </button>
                                                     </div>
 
                                                     ${item.hasQuantity ? `
-                                                        <!-- Barra de Progresso do Próprio Item -->
-                                                        <div class="space-y-0.5 pt-1">
-                                                            <div class="flex justify-between text-[10px] text-slate-400">
+                                                        <!-- Barra de Progresso Individual do Item -->
+                                                        <div class="space-y-0.5 pt-1.5 border-t border-slate-700/50">
+                                                            <div class="flex justify-between text-[10px] text-slate-500 font-medium tracking-tight">
                                                                 <span>Progresso do Item</span>
                                                                 <span>${itemProg}% (${item.currentQty}/${item.totalQty})</span>
                                                             </div>
-                                                            <div class="w-full bg-slate-950 rounded-full h-1 overflow-hidden">
-                                                                <div class="bg-cyan-500 h-1 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
+                                                            <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                                                                <div class="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" style="width: ${itemProg}%"></div>
                                                             </div>
                                                         </div>
                                                     ` : ''}
@@ -301,30 +436,23 @@
                                         }).join('')}
                                     </div>
 
-                                    <!-- Formulário para adicionar Novo Item -->
-                                    <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800 space-y-2 mt-2">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-[11px] font-medium text-slate-400">Adicionar Item / Requisito</span>
-                                            <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300 select-none">
-                                                <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded">
-                                                Rastrear Quantidade?
+                                    <!-- Formulário para adicionar Novo Item à Quest -->
+                                    <form onsubmit="handleItemSubmit(event, ${task.id}, ${sub.id})" class="bg-slate-950/50 p-3 rounded-lg border border-slate-800 space-y-2.5 mt-3 shadow-inner">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[11px] font-semibold text-slate-400 tracking-wider">NOVO REQUISITO</span>
+                                            <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-300 select-none bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                                                <input type="checkbox" onchange="toggleQtyInputs(this)" class="qty-toggle accent-indigo-500 rounded w-3.5 h-3.5">
+                                                Usar Quantidade?
                                             </label>
                                         </div>
-
                                         <div class="flex gap-2 items-center">
-                                            <input type="text" placeholder="Nome do item (ex: Tainted Gem)..." required
-                                                class="item-title flex-1 bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
-                                            
-                                            <div class="qty-container hidden flex items-center gap-1">
-                                                <input type="number" min="0" placeholder="Atual" value="0"
-                                                    class="item-qty-current w-12 bg-slate-900 border border-slate-700/80 rounded px-1.5 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
-                                                <span class="text-slate-500 text-xs">/</span>
-                                                <input type="number" min="1" placeholder="Total" value="10"
-                                                    class="item-qty-total w-12 bg-slate-900 border border-slate-700/80 rounded px-1.5 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
+                                            <input type="text" placeholder="Nome do item (ex: Tainted Gem)..." required class="item-title flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition">
+                                            <div class="qty-container hidden flex items-center gap-1.5 bg-slate-900 p-1 rounded-md border border-slate-700">
+                                                <input type="number" min="0" value="0" title="Quantidade inicial" class="item-qty-current w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
+                                                <span class="text-slate-600 text-xs">/</span>
+                                                <input type="number" min="1" value="10" title="Quantidade total necessária" class="item-qty-total w-14 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-center text-slate-100 focus:outline-none focus:border-emerald-500">
                                             </div>
-
-                                            <button type="submit" 
-                                                class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1 rounded text-xs transition flex items-center gap-1">
+                                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-1.5 rounded-md text-xs transition flex items-center gap-1.5 shadow active:scale-95">
                                                 <i class="fa-solid fa-plus text-[10px]"></i> Item
                                             </button>
                                         </div>
@@ -334,52 +462,44 @@
                         }).join('')}
                     </div>
 
-                    <!-- Formulário para Nova Quest -->
-                    <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-2 border-t border-slate-700/60">
-                        <input type="text" placeholder="Nova quest (ex: Requisitos de Quest)..." required
-                            class="subtask-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
-                        <button type="submit" 
-                            class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1">
+                    <!-- Formulário para Nova Quest dentro da Meta -->
+                    <form onsubmit="handleSubtaskSubmit(event, ${task.id})" class="flex gap-2 pt-3 border-t border-slate-700/60 mt-3">
+                        <input type="text" placeholder="Nova quest ou categoria (ex: Requisitos de Quest)..." required class="subtask-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                        <button type="submit" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow active:scale-95">
                             <i class="fa-solid fa-plus text-[10px]"></i> Quest
                         </button>
                     </form>
                 `;
-
                 container.appendChild(card);
             });
         }
 
-        function toggleQtyInputs(checkbox) {
+        // --- FUNÇÕES AUXILIARES DA INTERFACE ---
+        window.toggleQtyInputs = function(checkbox) {
             const form = checkbox.closest('form');
-            const qtyContainer = form.querySelector('.qty-container');
-            if (checkbox.checked) {
-                qtyContainer.classList.remove('hidden');
-            } else {
-                qtyContainer.classList.add('hidden');
-            }
-        }
+            form.querySelector('.qty-container').classList.toggle('hidden', !checkbox.checked);
+        };
 
-        function handleItemSubmit(e, taskId, subtaskId) {
+        window.handleItemSubmit = function(e, taskId, subtaskId) {
             e.preventDefault();
             const form = e.target;
             const title = form.querySelector('.item-title').value.trim();
             const hasQuantity = form.querySelector('.qty-toggle').checked;
             const currentQty = parseInt(form.querySelector('.item-qty-current').value) || 0;
             const totalQty = parseInt(form.querySelector('.item-qty-total').value) || 1;
+            if (title) addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty);
+            form.reset(); // Limpa o formulário
+            form.querySelector('.qty-container').classList.add('hidden'); // Esconde campos de qty
+        };
 
-            if (title) {
-                addItem(taskId, subtaskId, title, hasQuantity, currentQty, totalQty);
-            }
-        }
-
-        function handleSubtaskSubmit(e, taskId) {
+        window.handleSubtaskSubmit = function(e, taskId) {
             e.preventDefault();
             const input = e.target.querySelector('.subtask-input');
             if (input.value.trim()) {
                 addSubtask(taskId, input.value.trim());
                 input.value = '';
             }
-        }
+        };
 
         document.getElementById('task-form').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -390,17 +510,11 @@
             }
         });
 
+        // Função simples para evitar ataques XSS
         function escapeHtml(str) {
-            return str.replace(/[&<>"']/g, (m) => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            })[m]);
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
         }
-
-        renderTasks();
     </script>
 </body>
 </html>
