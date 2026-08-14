@@ -158,7 +158,7 @@
         </main>
     </div>
 
-    <!-- Script de Integração (Firebase & Dados JSON) -->
+    <!-- Script de Integração -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -182,38 +182,102 @@
         let tasks = [];
         let currentFilter = 'all';
 
-        // 📚 BANCO DE DADOS DINÂMICO (Carregado do dados.json com proteção contra estrutura interna)
-        let aqwDatabase = {};
+        // 🛡️ BANCO DE DADOS BLINDADO (Com Presets Nativos e Fallback Seguro)
+        let aqwDatabase = {
+            "vhl": {
+                title: "Void Highlord (VHL)",
+                subtasks: [
+                    {
+                        id: 1,
+                        title: "Roents & Hard Farming",
+                        items: [
+                            { id: 101, title: "Roentgenium", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: true, completed: false },
+                            { id: 102, title: "Void Crystal A", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false },
+                            { id: 103, title: "Void Crystal B", hasQuantity: true, currentQty: 0, totalQty: 6, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "loo": {
+                title: "Lord of Order (LoO)",
+                subtasks: [
+                    {
+                        id: 2,
+                        title: "Missões Semanais",
+                        items: [
+                            { id: 201, title: "Destiny Token", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "valiance": {
+                title: "Valiance",
+                subtasks: [
+                    {
+                        id: 3,
+                        title: "Requisitos de Forge",
+                        items: [
+                            { id: 301, title: "Abyssal Token", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "ldk": {
+                title: "Legion DoomKnight",
+                subtasks: [
+                    {
+                        id: 4,
+                        title: "Requisitos da Quest",
+                        items: [
+                            { id: 401, title: "Undead Legend", hasQuantity: false, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "nsod": {
+                title: "Necrotic Sword of Doom (NSoD)",
+                subtasks: [
+                    {
+                        id: 5,
+                        title: "Farma Principal",
+                        items: [
+                            { id: 501, title: "Void Energy", hasQuantity: true, currentQty: 0, totalQty: 7500, isDaily: false, completed: false }
+                        ]
+                    }
+                ]
+            },
+            "vdk": {
+                title: "Verus DoomKnight",
+                subtasks: [
+                    {
+                        id: 6,
+                        title: "Farma Principal",
+                        items: [
+                            { id: 601, title: "Verus Medal", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: true, completed: false }
+                        ]
+                    }
+                ]
+            }
+        };
 
         async function loadAqwDatabase() {
             try {
                 const response = await fetch('data/dados.json');
+                if (!response.ok) return;
                 const data = await response.json();
                 
                 let itemsList = [];
-                
                 if (Array.isArray(data)) {
                     itemsList = data;
                 } else if (data && typeof data === 'object') {
-                    if (data.vhl || data.void_highlord || data.id || data.nome) {
-                        itemsList = Object.values(data).some(v => typeof v === 'object' && v !== null) 
-                            ? Object.entries(data).map(([k, v]) => ({ id: k, ...(typeof v === 'object' ? v : {}) }))
-                            : [data];
-                    } else {
-                        // Se for uma estrutura agrupada, pega os valores internos ignorando o esquema do JSON
-                        itemsList = Object.values(data).flat().filter(item => typeof item === 'object' && item !== null && (item.nome || item.name || item.id));
-                        if (itemsList.length === 0) {
-                            itemsList = Object.entries(data).map(([k, v]) => ({ id: k, ...v }));
-                        }
-                    }
+                    itemsList = Object.values(data).flat().filter(item => typeof item === 'object' && item !== null && (item.nome || item.name));
                 }
 
                 itemsList.forEach((item) => {
-                    if (!item || (!item.nome && !item.name && !item.id)) return;
-                    
+                    if (!item || (!item.nome && !item.name)) return;
                     const rawId = String(item.id || item.nome || item.name).toLowerCase();
-                    const nome = item.nome || item.name || rawId;
-                    const passos = item.passos || item.steps || item.passos_requisitos || [];
+                    const nome = item.nome || item.name;
+                    const passos = item.passos || item.steps || [];
 
                     if (!passos || !Array.isArray(passos)) return;
 
@@ -226,8 +290,8 @@
                                 id: Date.now() + (pIdx * 10) + rIdx + 100,
                                 title: req.nome || req.name || 'Item',
                                 hasQuantity: true,
-                                currentQty: req.quantidadeAtual || req.currentQty || 0,
-                                totalQty: req.quantidadeTotal || req.totalQty || 1,
+                                currentQty: req.quantidadeAtual || 0,
+                                totalQty: req.quantidadeTotal || 1,
                                 isDaily: req.isDaily || false,
                                 completed: false
                             }))
@@ -236,27 +300,11 @@
 
                     aqwDatabase[rawId] = converted;
                     aqwDatabase[nome.toLowerCase()] = converted;
-
-                    // Mapeamentos de atalhos e aliases
-                    if (rawId.includes('void') || rawId === 'vhl' || nome.toLowerCase().includes('void highlord')) {
-                        aqwDatabase['vhl'] = converted;
-                        aqwDatabase['void highlord (vhl)'] = converted;
-                        aqwDatabase['void-highlord'] = converted;
-                    }
-                    if (rawId.includes('order') || rawId === 'loo' || nome.toLowerCase().includes('lord of order')) {
-                        aqwDatabase['loo'] = converted;
-                        aqwDatabase['lord of order'] = converted;
-                        aqwDatabase['lord-of-order'] = converted;
-                    }
-                    if (rawId.includes('valiance') || rawId === 'valiance') aqwDatabase['valiance'] = converted;
-                    if (rawId.includes('doomknight') || rawId === 'ldk') aqwDatabase['ldk'] = converted;
-                    if (rawId.includes('nsod') || rawId === 'nsod') aqwDatabase['nsod'] = converted;
-                    if (rawId.includes('verus') || rawId === 'vdk') aqwDatabase['vdk'] = converted;
                 });
 
-                console.log("Banco de dados AQW carregado com sucesso:", aqwDatabase);
+                console.log("Banco de dados atualizado com sucesso!", aqwDatabase);
             } catch (err) {
-                console.error("Erro ao carregar o arquivo dados.json:", err);
+                console.log("Usando banco de dados interno de segurança (Presets padrão).");
             }
         }
 
@@ -317,7 +365,6 @@
             try {
                 await signInWithEmailAndPassword(auth, email, password);
             } catch (err) {
-                console.error(err);
                 errDiv.innerText = "Erro ao entrar: Verifique e-mail/senha ou cadastre-se.";
                 errDiv.classList.remove('hidden');
             }
@@ -338,7 +385,6 @@
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
             } catch (err) {
-                console.error(err);
                 errDiv.innerText = "Erro ao cadastrar: Este e-mail já pode estar em uso.";
                 errDiv.classList.remove('hidden');
             }
@@ -362,7 +408,6 @@
                 }
                 renderTasks();
             } catch (err) {
-                console.error("Erro ao carregar dados:", err);
                 container.innerHTML = `<div class="text-center py-10 text-red-400">Erro ao carregar dados da nuvem.</div>`;
             }
         }
