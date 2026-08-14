@@ -276,10 +276,10 @@ window.renderTasks = () => {
                         </div>
                 `;
 
-                // Renderizar Sub-Requisitos (Cadeia inferior)
+                // Renderizar Sub-Requisitos (Itens necessários)
                 if (req.subRequirements && req.subRequirements.length > 0) {
                     html += `<div class="pl-6 pt-2 border-t border-zinc-800/60 space-y-2 mt-2">
-                                <div class="text-[10px] uppercase tracking-wider font-semibold text-indigo-400 mb-1">Subitens / Cadeia Necessária:</div>`;
+                                <div class="text-[10px] uppercase tracking-wider font-semibold text-indigo-400 mb-1">Itens necessários:</div>`;
                     
                     req.subRequirements.forEach((sub, subIndex) => {
                         const subDone = sub.current >= sub.max;
@@ -306,9 +306,9 @@ window.renderTasks = () => {
                 // Formulário para adicionar novo subitem ao requisito principal
                 html += `
                         <div class="pt-2 flex gap-2 items-center">
-                            <input type="text" id="new-sub-req-${tIndex}-${sIndex}-${rIndex}" placeholder="Adicionar subitem necessário..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-indigo-500">
+                            <input type="text" id="new-sub-req-${tIndex}-${sIndex}-${rIndex}" placeholder="Adicionar item necessário..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-indigo-500">
                             <input type="number" id="new-sub-max-${tIndex}-${sIndex}-${rIndex}" placeholder="Qtd" value="1" min="1" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1 py-1 text-[11px] text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
-                            <button onclick="addSubReq(${tIndex}, ${sIndex}, ${rIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] px-2.5 py-1 rounded transition">+ Subitem</button>
+                            <button onclick="addSubReq(${tIndex}, ${sIndex}, ${rIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] px-2.5 py-1 rounded transition">+ Item</button>
                         </div>
                     </div>
                 `;
