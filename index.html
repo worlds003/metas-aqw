@@ -158,7 +158,53 @@
         </main>
     </div>
 
-    <!-- Script de Integração (Firebase) -->
+    <!-- MODAL DE INFORMAÇÕES DE FARM -->
+    <div id="farm-modal" onclick="if(event.target === this) closeFarmModal()" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-all">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-5 relative">
+            <button onclick="closeFarmModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-zinc-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="space-y-1">
+                <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Guia de Farm</span>
+                <h3 id="modal-item-title" class="text-xl font-bold text-white flex items-center gap-2"></h3>
+            </div>
+
+            <div class="space-y-3 bg-zinc-950 p-4 rounded-lg border border-zinc-800/80 text-xs">
+                <div class="flex items-start gap-2.5">
+                    <i class="fa-solid fa-location-dot text-indigo-400 text-sm mt-0.5"></i>
+                    <div>
+                        <p class="text-zinc-400 font-medium">Local / Mapa:</p>
+                        <p id="modal-item-map" class="text-zinc-200 font-mono text-xs select-all bg-zinc-900 px-2 py-1 rounded border border-zinc-800 inline-block mt-1"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-2.5 pt-2 border-t border-zinc-800/60">
+                    <i class="fa-solid fa-scroll text-indigo-400 text-sm mt-0.5"></i>
+                    <div>
+                        <p class="text-zinc-400 font-medium">Quest / Origem:</p>
+                        <p id="modal-item-quest" class="text-zinc-200 font-medium mt-0.5"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-2.5 pt-2 border-t border-zinc-800/60">
+                    <i class="fa-solid fa-user-ninja text-indigo-400 text-sm mt-0.5"></i>
+                    <div>
+                        <p class="text-zinc-400 font-medium">NPC / Monstro / Shop:</p>
+                        <p id="modal-item-npc" class="text-zinc-200 font-medium mt-0.5"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="closeFarmModal()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-lg text-xs font-medium transition">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Integração (Firebase & Lógica) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -182,6 +228,69 @@
         let tasks = [];
         let currentFilter = 'all';
 
+        // 📖 BANCO DE DADOS DE GUIA DE FARM INTERNO
+        const farmInfoDatabase = {
+            "roentgenium of nulgath": { map: "/join tercessuinotlim", quest: "Void Highlord's Challenge", npc: "Willida / Nulgath" },
+            "elder's blood (daily in /join arcangrove)": { map: "/join arcangrove", quest: "Gorillaphant Stalking (Daily)", npc: "Rayst" },
+            "elder's blood": { map: "/join arcangrove", quest: "Gorillaphant Stalking (Daily)", npc: "Rayst" },
+            "voucher of nulgath (non-mem)": { map: "/join tercessuinotlim", quest: "Supplies to spin the Wheel of Chance", npc: "Nulgath / Swindle Bilk" },
+            "black knight orb": { map: "/join bludrut2", quest: "Black Knight Orb Quest", npc: "Black Knight Chest" },
+            "void crystal a": { map: "/join tercessuinotlim", quest: "Void Crystal A Merge", npc: "Void Highlord Anvil" },
+            "void crystal b": { map: "/join tercessuinotlim", quest: "Void Crystal B Merge", npc: "Void Highlord Anvil" },
+            "heart of order (daily - /join ultraezrajal)": { map: "/join ultraezrajal", quest: "Heart of Order (Daily)", npc: "Ezrajal / Ultra Boss" },
+            "heart of order": { map: "/join ultraezrajal", quest: "Heart of Order (Daily)", npc: "Ezrajal / Ultra Boss" },
+            "complete as 10 quests do loo": { map: "/join battleoff", quest: "10 Quests do Lord of Order", npc: "Mirror Lord of Order" },
+            "doom-blade specimen (daily)": { map: "/join terminafang", quest: "Daily Quest do Verus DoomKnight", npc: "Terminafang NPC" },
+            "essência da escuridão": { map: "/join shadowfall", quest: "Farm de Essências", npc: "Shadowfall Monsters" },
+            "fire awe / ice awe / dark awe": { map: "/join museum", quest: "Awe Quests", npc: "Valkyrie / Museum" },
+            "blod completo": { map: "/join necropolis", quest: "Blinding Light of Destiny Questline", npc: "Artix" },
+            "lord of order class": { map: "/join battleoff", quest: "Lord of Order Questline", npc: "Mirror Lord of Order" },
+            "rank 10 towerofdoom": { map: "/join towerofdoom", quest: "Reputação TowerofDoom", npc: "TowerofDoom Quests" },
+            "blood sorceress class": { map: "/join towerofdoom10", quest: "Drop do Boss", npc: "Inquisitor Master" },
+            "legion token": { map: "/join legionarena", quest: "First Class Entertainment / Legion Tokens", npc: "Legion Arena / Dage" },
+            "dark token": { map: "/join legionarena", quest: "Quests do Dark Token", npc: "Legion NPC" },
+            "void aura": { map: "/join shadowfall", quest: "Commanding Shadow Shadows / Retrieve City Tokens", npc: "Braken Awe / Gravelyn" },
+            "cavern celestite": { map: "/join battlefield", quest: "Quests de Cavern Celestite", npc: "Shadowfall / Battlefield" },
+            "barium of minecrafting (daily)": { map: "/join necropolis", quest: "MineCrafting (Daily)", npc: "Artix" },
+            "barium of minecrafting": { map: "/join necropolis", quest: "MineCrafting (Daily)", npc: "Artix" },
+            "fiend token": { map: "/join tercessuinotlim", quest: "Fiend Token Quests", npc: "Nulgath / Fiend NPC" },
+            "diamond of nulgath": { map: "/join tercessuinotlim", quest: "Supplies to spin the Wheel of Chance", npc: "Nulgath / Swindle" },
+            "blood gem of the archfiend": { map: "/join tercessuinotlim", quest: "Kiss the Void / Bloody Chaos", npc: "Nulgath" },
+            "unbound thread": { map: "/join archmage", quest: "ArchMage Questline", npc: "Book of Arcana NPC" },
+            "book of arcana": { map: "/join archmage", quest: "ArchMage Main Quest", npc: "Main Book" },
+            "elemental ink": { map: "/join spellcraft", quest: "Buy/Merge Spellcrafting", npc: "Spellcraft NPC" },
+            "rank 10 mythsong": { map: "/join mythsong", quest: "Mythsong Reputation Quests", npc: "Mythsong NPCs" },
+            "rank 10 brightoak": { map: "/join brightoak", quest: "Brightoak Reputation Quests", npc: "Rivensylth" },
+            "rank 10 arcangrove": { map: "/join arcangrove", quest: "Arcangrove Reputation Quests", npc: "Rayst / Arcangrove NPCs" },
+            "proof of goodness": { map: "/join castle", quest: "ArchPaladin Questline", npc: "Good NPC / Artix" },
+            "sacred token": { map: "/join biltmore", quest: "Sacred Token Quest", npc: "Paladin NPC" },
+            "paladin class (rank 10)": { map: "/join necropolis", quest: "Paladin Class Merge", npc: "Artix" }
+        };
+
+        window.openFarmModal = function(itemTitle) {
+            const key = itemTitle.toLowerCase().trim();
+            const info = farmInfoDatabase[key] || {
+                map: "Consulte o mapa no jogo",
+                quest: "Quest individual ou Drop de Monstro",
+                npc: "NPC do Mapa correspondente"
+            };
+
+            document.getElementById('modal-item-title').innerText = itemTitle;
+            document.getElementById('modal-item-map').innerText = info.map;
+            document.getElementById('modal-item-quest').innerText = info.quest;
+            document.getElementById('modal-item-npc').innerText = info.npc;
+
+            const modal = document.getElementById('farm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeFarmModal = function() {
+            const modal = document.getElementById('farm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
         // 📚 BANCO DE DADOS INTELIGENTE DE CLASSES E ITEMS AQW
         const aqwDatabase = {
             "void highlord": {
@@ -197,21 +306,10 @@
                         ]
                     },
                     {
-                        title: "Void Crystal A",
+                        title: "Cristais do Void (/join tercessuinotlim)",
                         items: [
-                            { title: "Unidentified 10", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Gem of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 150, isDaily: false, completed: false },
-                            { title: "Dark Crystal Shard", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Tainted Gem", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false }
-                        ]
-                    },
-                    {
-                        title: "Void Crystal B",
-                        items: [
-                            { title: "Diamond of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Blood Gem of the Archfiend", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false },
-                            { title: "Emblem of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 20, isDaily: false, completed: false },
-                            { title: "Totem of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false }
+                            { title: "Void Crystal A", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Void Crystal B", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
                         ]
                     }
                 ]
@@ -229,21 +327,10 @@
                         ]
                     },
                     {
-                        title: "Void Crystal A",
+                        title: "Cristais do Void (/join tercessuinotlim)",
                         items: [
-                            { title: "Unidentified 10", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Gem of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 150, isDaily: false, completed: false },
-                            { title: "Dark Crystal Shard", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Tainted Gem", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false }
-                        ]
-                    },
-                    {
-                        title: "Void Crystal B",
-                        items: [
-                            { title: "Diamond of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Blood Gem of the Archfiend", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false },
-                            { title: "Emblem of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 20, isDaily: false, completed: false },
-                            { title: "Totem of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 15, isDaily: false, completed: false }
+                            { title: "Void Crystal A", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
+                            { title: "Void Crystal B", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
                         ]
                     }
                 ]
@@ -322,18 +409,6 @@
                     }
                 ]
             },
-            "scarlet sorceress": {
-                title: "Scarlet Sorceress (Filipe /join towerofdoom)",
-                subtasks: [
-                    {
-                        title: "Farm & Requisitos",
-                        items: [
-                            { title: "Rank 10 TowerofDoom", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
-                            { title: "Blood Sorceress Class", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
             "legion doomknight": {
                 title: "Legion DoomKnight",
                 subtasks: [
@@ -367,71 +442,6 @@
                             { title: "Void Aura", hasQuantity: true, currentQty: 0, totalQty: 7500, isDaily: false, completed: false },
                             { title: "Cavern Celestite", hasQuantity: true, currentQty: 0, totalQty: 1600, isDaily: false, completed: false },
                             { title: "Barium of MineCrafting (Daily)", hasQuantity: true, currentQty: 0, totalQty: 4, isDaily: true, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "necrotic sword of doom": {
-                title: "Necrotic Sword of Doom (NSoD)",
-                subtasks: [
-                    {
-                        title: "Reagentes Principais (/join shadowfall)",
-                        items: [
-                            { title: "Void Aura", hasQuantity: true, currentQty: 0, totalQty: 7500, isDaily: false, completed: false },
-                            { title: "Cavern Celestite", hasQuantity: true, currentQty: 0, totalQty: 1600, isDaily: false, completed: false },
-                            { title: "Barium of MineCrafting (Daily)", hasQuantity: true, currentQty: 0, totalQty: 4, isDaily: true, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "archfiend": {
-                title: "ArchFiend",
-                subtasks: [
-                    {
-                        title: "Reagentes de Fiend",
-                        items: [
-                            { title: "Fiend Token", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false },
-                            { title: "Diamond of Nulgath", hasQuantity: true, currentQty: 0, totalQty: 200, isDaily: false, completed: false },
-                            { title: "Blood Gem of the Archfiend", hasQuantity: true, currentQty: 0, totalQty: 30, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "archmage": {
-                title: "ArchMage",
-                subtasks: [
-                    {
-                        title: "Unbound Essences & Books",
-                        items: [
-                            { title: "Unbound Thread", hasQuantity: true, currentQty: 0, totalQty: 100, isDaily: false, completed: false },
-                            { title: "Book of Arcana", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Elemental Ink", hasQuantity: true, currentQty: 0, totalQty: 1000, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "stone crusher": {
-                title: "StoneCrusher",
-                subtasks: [
-                    {
-                        title: "Reputações Necessárias",
-                        items: [
-                            { title: "Rank 10 Mythsong", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
-                            { title: "Rank 10 Brightoak", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false },
-                            { title: "Rank 10 Arcangrove", hasQuantity: true, currentQty: 0, totalQty: 10, isDaily: false, completed: false }
-                        ]
-                    }
-                ]
-            },
-            "arch paladin": {
-                title: "ArchPaladin",
-                subtasks: [
-                    {
-                        title: "Proof of Goodness & Bosses",
-                        items: [
-                            { title: "Proof of Goodness", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Sacred Token", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false },
-                            { title: "Paladin Class (Rank 10)", hasQuantity: true, currentQty: 0, totalQty: 1, isDaily: false, completed: false }
                         ]
                     }
                 ]
@@ -857,7 +867,6 @@
                                     <div class="space-y-1.5 pl-2 border-l border-zinc-800">
                                         ${sub.items.map(item => {
                                             const itemProg = getItemProgress(item);
-                                            const wikiUrl = `https://aqwwiki.wikidot.com/search:main/q/${encodeURIComponent(item.title)}`;
                                             return `
                                                 <div class="bg-zinc-900/90 p-2.5 rounded border border-zinc-800/80 text-xs space-y-1.5 hover:border-zinc-700 transition">
                                                     <div class="flex items-center justify-between gap-2">
@@ -876,9 +885,9 @@
                                                             </span>
                                                         ` : ''}
 
-                                                        <a href="${wikiUrl}" target="_blank" title="Buscar na AQW Wiki" class="text-zinc-500 hover:text-indigo-400 transition text-xs p-1">
-                                                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                                                        </a>
+                                                        <button type="button" onclick="openFarmModal('${escapeHtml(item.title)}')" title="Guia de Farm do Item" class="text-zinc-500 hover:text-indigo-400 transition text-xs p-1">
+                                                            <i class="fa-solid fa-circle-info text-[11px]"></i>
+                                                        </button>
 
                                                         ${item.hasQuantity ? `
                                                             <div class="flex items-center gap-1 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 text-[11px]">
