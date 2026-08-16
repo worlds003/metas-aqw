@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('app-container').classList.remove('hidden');
     document.getElementById('user-email-display').innerText = 'Modo Local / Convidado';
 
-    // Injeta o CSS do efeito de água na barra de progresso
+    // Injeta o CSS do efeito de água na barra de progresso e animações de setas
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes waterFlow {
@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
             background: linear-gradient(90deg, #3b82f6, #06b6d4, #4f46e5, #3b82f6);
             background-size: 200% auto;
             animation: waterFlow 2.5s linear infinite;
+        }
+        .transition-transform {
+            transition: transform 0.3s ease;
         }
     `;
     document.head.appendChild(style);
@@ -97,9 +100,11 @@ function setupEventListeners() {
                 id: Date.now().toString(),
                 title: title,
                 observation: "",
+                collapsed: false,
                 steps: [
                     {
                         title: "Passo 1: Objetivos Iniciais",
+                        collapsed: false,
                         requirements: []
                     }
                 ]
@@ -121,8 +126,12 @@ window.loadPreset = (key) => {
         id: Date.now().toString(),
         title: preset.title,
         observation: preset.observation || "",
+        collapsed: false,
         steps: JSON.parse(JSON.stringify(preset.steps))
     };
+
+    // Garante propriedade collapsed nos presets caso não venham definidos
+    newTask.steps.forEach(s => { if (s.collapsed === undefined) s.collapsed = false; });
 
     tasks.push(newTask);
     saveTasksToStorage();
@@ -230,10 +239,15 @@ window.renderTasks = () => {
         if (currentFilter === 'active' && taskProgress === 100) return;
         if (currentFilter === 'completed' && taskProgress < 100) return;
 
+        const isTaskCollapsed = task.collapsed || false;
+
         html += `
             <div class="bg-zinc-900 rounded-xl border border-zinc-800 p-6 space-y-5 shadow-lg">
                 <div class="flex justify-between items-start border-b border-zinc-800 pb-4">
-                    <div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleTaskCollapse(${tIndex})" class="text-purple-400 hover:text-purple-300 transition-transform p-1" title="Minimizar/Expandir Meta">
+                            <span class="inline-block transition-transform duration-300" style="transform: rotate(${isTaskCollapsed ? '-90deg' : '0deg'});">▼</span>
+                        </button>
                         <div class="flex items-center gap-3">
                             <h3 class="text-xl font-bold text-white">${task.title}</h3>
                             <button onclick="editTaskTitle(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1.5 transition" title="Editar Nome da Meta">
@@ -254,27 +268,28 @@ window.renderTasks = () => {
                     </div>
                 </div>
 
-                <!-- Observação Global da Meta -->
-                <div class="space-y-2 mt-2 mb-4">
-                    ${task.observation ? `
-                        <div class="flex items-start justify-between gap-3 bg-zinc-950/80 p-3.5 rounded-lg border border-zinc-800 text-sm text-zinc-300 shadow-inner">
-                            <div class="flex items-start gap-3 flex-1">
-                                <i class="fa-solid fa-circle-info text-indigo-400 mt-1"></i>
-                                <span class="whitespace-pre-wrap">${task.observation}</span>
+                <div class="space-y-5 ${isTaskCollapsed ? 'hidden' : ''}">
+                    <!-- Observação Global da Meta -->
+                    <div class="space-y-2 mt-2 mb-4">
+                        ${task.observation ? `
+                            <div class="flex items-start justify-between gap-3 bg-zinc-950/80 p-3.5 rounded-lg border border-zinc-800 text-sm text-zinc-300 shadow-inner">
+                                <div class="flex items-start gap-3 flex-1">
+                                    <i class="fa-solid fa-circle-info text-indigo-400 mt-1"></i>
+                                    <span class="whitespace-pre-wrap">${task.observation}</span>
+                                </div>
+                                <button onclick="editTaskObservation(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition" title="Editar Observação">
+                                    <i class="fa-solid fa-pen text-sm"></i>
+                                </button>
                             </div>
-                            <button onclick="editTaskObservation(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition" title="Editar Observação">
-                                <i class="fa-solid fa-pen text-sm"></i>
+                        ` : ''}
+                        <div class="flex justify-end">
+                            <button onclick="editTaskObservation(${tIndex})" class="text-sm text-zinc-400 hover:text-indigo-300 flex items-center gap-1.5 transition font-medium">
+                                <i class="fa-solid fa-plus text-xs"></i> ${task.observation ? 'Editar Obs' : 'Adicionar Observação'}
                             </button>
                         </div>
-                    ` : ''}
-                    <div class="flex justify-end">
-                        <button onclick="editTaskObservation(${tIndex})" class="text-sm text-zinc-400 hover:text-indigo-300 flex items-center gap-1.5 transition font-medium">
-                            <i class="fa-solid fa-plus text-xs"></i> ${task.observation ? 'Editar Obs' : 'Adicionar Observação'}
-                        </button>
                     </div>
-                </div>
 
-                <div class="space-y-5">
+                    <div class="space-y-5">
         `;
 
         task.steps.forEach((step, sIndex) => {
@@ -293,7 +308,9 @@ window.renderTasks = () => {
                 <div class="bg-zinc-950/60 p-5 rounded-lg border border-zinc-800/80 space-y-4 transition-all">
                     <div class="flex justify-between items-center text-sm">
                         <div class="flex items-center gap-2 min-w-0 flex-1">
-                            <i class="fa-solid fa-angles-right text-indigo-400"></i>
+                            <button onclick="toggleStepCollapse(${tIndex}, ${sIndex})" class="text-purple-400 hover:text-purple-300 p-1 transition" title="Minimizar/Expandir Passo">
+                                <span class="inline-block transition-transform duration-300 text-base" style="transform: rotate(${isCollapsed ? '0deg' : '90deg'});">»</span>
+                            </button>
                             <span class="font-semibold text-zinc-200 text-base truncate">${step.title}</span>
                             <button onclick="editStepTitle(${tIndex}, ${sIndex})" class="text-zinc-600 hover:text-indigo-400 p-1.5 transition" title="Editar Passo">
                                 <i class="fa-solid fa-pen text-xs"></i>
@@ -306,8 +323,8 @@ window.renderTasks = () => {
                                 </div>
                                 <span class="text-zinc-500 font-mono text-sm">${stepProg}%</span>
                             </div>
-                            <button onclick="toggleStepCollapse(${tIndex}, ${sIndex})" class="text-zinc-400 hover:text-zinc-200 p-1.5 transition" title="Minimizar/Expandir Passo">
-                                <i class="fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-sm"></i>
+                            <button onclick="deleteStep(${tIndex}, ${sIndex})" class="text-zinc-500 hover:text-red-400 p-1.5 transition" title="Deletar Passo">
+                                <span class="text-base font-bold">&times;</span>
                             </button>
                         </div>
                     </div>
@@ -337,7 +354,7 @@ window.renderTasks = () => {
                                         <i class="fa-solid fa-pen text-xs"></i>
                                     </button>
 
-                                    <!-- Observação Inline (agora suporta múltiplas linhas) -->
+                                    <!-- Observação Inline -->
                                     ${req.observation ? `
                                         <div class="flex items-start gap-2 bg-zinc-950 px-3 py-1.5 rounded-md border border-zinc-800 text-xs text-zinc-300 mx-1 max-w-[200px] xl:max-w-[350px]">
                                             <span class="whitespace-pre-wrap break-words flex-1">${req.observation}</span>
@@ -350,7 +367,6 @@ window.renderTasks = () => {
                             </div>
                             
                             <div class="flex items-center gap-3 shrink-0 pt-0.5">
-                                <!-- Botão Add Obs Minimalista (apenas se estiver vazio) -->
                                 ${!req.observation ? `
                                     <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-xs text-zinc-500 hover:text-indigo-300 flex items-center gap-1 transition font-medium mr-1">
                                         <i class="fa-solid fa-plus text-[10px]"></i> Add Obs
@@ -475,7 +491,6 @@ window.renderTasks = () => {
     updateStats();
 };
 
-// --- Função Modal Personalizado para Textos Longos (Permite 'Enter') ---
 window.openMultilineModal = (title, currentValue, onSave) => {
     const existing = document.getElementById('custom-obs-modal');
     if (existing) existing.remove();
@@ -503,6 +518,15 @@ window.openMultilineModal = (title, currentValue, onSave) => {
     };
 };
 
+window.toggleTaskCollapse = (tIndex) => {
+    if (tasks[tIndex].collapsed === undefined) {
+        tasks[tIndex].collapsed = true;
+    } else {
+        tasks[tIndex].collapsed = !tasks[tIndex].collapsed;
+    }
+    renderTasks();
+};
+
 window.toggleStepCollapse = (tIndex, sIndex) => {
     if (tasks[tIndex].steps[sIndex].collapsed === undefined) {
         tasks[tIndex].steps[sIndex].collapsed = true;
@@ -510,6 +534,14 @@ window.toggleStepCollapse = (tIndex, sIndex) => {
         tasks[tIndex].steps[sIndex].collapsed = !tasks[tIndex].steps[sIndex].collapsed;
     }
     renderTasks();
+};
+
+window.deleteStep = (tIndex, sIndex) => {
+    if (confirm("Deseja realmente excluir este passo?")) {
+        tasks[tIndex].steps.splice(sIndex, 1);
+        saveTasksToStorage();
+        renderTasks();
+    }
 };
 
 window.toggleStepForm = (tIndex) => {
@@ -539,7 +571,6 @@ window.toggleSubForm = (tIndex, sIndex, rIndex) => {
     }
 };
 
-// Observações utilizando o Modal novo!
 window.editTaskObservation = (tIndex) => {
     const current = tasks[tIndex].observation || "";
     window.openMultilineModal("Editar Observação Geral da Meta", current, (newVal) => {
@@ -569,7 +600,6 @@ window.editSubObservation = (tIndex, sIndex, rIndex, subIndex) => {
     });
 };
 
-// Funções de Edição de Nomes mantem o prompt simples
 window.editTaskTitle = (tIndex) => {
     const current = tasks[tIndex].title;
     const newTitle = prompt("Editar nome da meta:", current);
@@ -721,6 +751,7 @@ window.addStep = (tIndex) => {
 
     tasks[tIndex].steps.push({
         title,
+        collapsed: false,
         requirements: []
     });
 
