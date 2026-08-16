@@ -35,74 +35,12 @@ function loadTasksFromStorage() {
     if (saved) {
         try {
             tasks = JSON.parse(saved);
-            // Atualiza metadados das tarefas existentes caso o banco (PRESETS) tenha mudado
-            updateExistingTasksWithPresets();
         } catch (e) {
             tasks = [];
         }
     }
     renderTasks();
     updateStats();
-}
-
-/**
- * Atualiza propriedades estáticas das tarefas ativas caso venham do PRESET,
- * mantendo o progresso atual (current) do usuário intacto.
- */
-function updateExistingTasksWithPresets() {
-    tasks = tasks.map(task => {
-        // Tenta achar se essa task corresponde a algum preset pelo título ou ID implícito
-        const matchingPresetKey = Object.keys(PRESETS).find(key => PRESETS[key].title === task.title);
-        if (!matchingPresetKey) return task;
-
-        const preset = PRESETS[matchingPresetKey];
-        
-        // Atualiza observação geral se estiver vazia ou atualizada no preset
-        if (!task.observation && preset.observation) {
-            task.observation = preset.observation;
-        }
-
-        // Mapeia e sincroniza os passos e requisitos mantendo o 'current' do usuário
-        if (preset.steps) {
-            task.steps = preset.steps.map((pStep, sIdx) => {
-                const existingStep = task.steps[sIdx] || { requirements: [] };
-                
-                const updatedRequirements = pStep.requirements.map((pReq, rIdx) => {
-                    const existingReq = existingStep.requirements ? existingStep.requirements[rIdx] : null;
-                    
-                    // Se já existe o requisito, preserva o progresso (current) e observação do usuário
-                    if (existingReq && existingReq.name === pReq.name) {
-                        return {
-                            ...pReq,
-                            current: Math.min(existingReq.current, pReq.max),
-                            observation: existingReq.observation || "",
-                            subRequirements: pReq.subRequirements ? pReq.subRequirements.map((pSub, subIdx) => {
-                                const existingSub = existingReq.subRequirements ? existingReq.subRequirements[subIdx] : null;
-                                if (existingSub && existingSub.name === pSub.name) {
-                                    return {
-                                        ...pSub,
-                                        current: Math.min(existingSub.current, pSub.max),
-                                        observation: existingSub.observation || ""
-                                    };
-                                }
-                                return pSub;
-                            }) : []
-                        };
-                    }
-                    return pReq;
-                });
-
-                return {
-                    ...pStep,
-                    collapsed: existingStep.collapsed !== undefined ? existingStep.collapsed : false,
-                    requirements: updatedRequirements
-                };
-            });
-        }
-
-        return task;
-    });
-    saveTasksToStorage();
 }
 
 function saveTasksToStorage() {
@@ -315,9 +253,9 @@ window.renderTasks = () => {
                         <button onclick="toggleTaskCollapse(${tIndex})" class="text-purple-400 hover:text-purple-300 transition-transform p-1" title="Minimizar/Expandir Meta">
                             <span class="inline-block transition-transform duration-300" style="transform: rotate(${isTaskCollapsed ? '-90deg' : '0deg'});">▼</span>
                         </button>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 group">
                             <h3 class="text-xl font-bold text-white">${task.title}</h3>
-                            <button onclick="editTaskTitle(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1.5 transition" title="Editar Nome da Meta">
+                            <button onclick="editTaskTitle(${tIndex})" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-indigo-400 p-1.5" title="Editar Nome da Meta">
                                 <i class="fa-solid fa-pen text-sm"></i>
                             </button>
                         </div>
@@ -373,12 +311,12 @@ window.renderTasks = () => {
             html += `
                 <div class="bg-zinc-950/60 p-5 rounded-lg border border-zinc-800/80 space-y-4 transition-all">
                     <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <div class="flex items-center gap-2 min-w-0 flex-1 group">
                             <button onclick="toggleStepCollapse(${tIndex}, ${sIndex})" class="text-purple-400 hover:text-purple-300 p-1 transition" title="Minimizar/Expandir Passo">
                                 <span class="inline-block transition-transform duration-300 text-base" style="transform: rotate(${isCollapsed ? '0deg' : '90deg'});">»</span>
                             </button>
                             <span class="font-semibold text-zinc-200 text-base truncate">${step.title}</span>
-                            <button onclick="editStepTitle(${tIndex}, ${sIndex})" class="text-zinc-600 hover:text-indigo-400 p-1.5 transition" title="Editar Passo">
+                            <button onclick="editStepTitle(${tIndex}, ${sIndex})" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-indigo-400 p-1.5" title="Editar Passo">
                                 <i class="fa-solid fa-pen text-xs"></i>
                             </button>
                         </div>
@@ -413,9 +351,9 @@ window.renderTasks = () => {
                                     </div>
                                 </label>
                                 
-                                <div class="flex flex-wrap items-center gap-1.5 pt-1 flex-1">
+                                <div class="flex flex-wrap items-center gap-1.5 pt-1 flex-1 group">
                                     <span class="text-sm font-medium ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
-                                    <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Requisito">
+                                    <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-indigo-400 p-1" title="Editar Requisito">
                                         <i class="fa-solid fa-pen text-xs"></i>
                                     </button>
 
@@ -464,9 +402,9 @@ window.renderTasks = () => {
                                             </div>
                                         </label>
                                         
-                                        <div class="flex flex-wrap items-center gap-1.5 pt-1 flex-1">
+                                        <div class="flex flex-wrap items-center gap-1.5 pt-1 flex-1 group">
                                             <span class="text-sm ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
-                                            <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Subitem">
+                                            <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-indigo-400 p-1" title="Editar Subitem">
                                                 <i class="fa-solid fa-pen text-xs"></i>
                                             </button>
 
