@@ -81,6 +81,7 @@ function setupEventListeners() {
             const newTask = {
                 id: Date.now().toString(),
                 title: title,
+                observation: "",
                 steps: [
                     {
                         title: "Passo 1: Objetivos Iniciais",
@@ -104,6 +105,7 @@ window.loadPreset = (key) => {
     const newTask = {
         id: Date.now().toString(),
         title: preset.title,
+        observation: preset.observation || "",
         steps: JSON.parse(JSON.stringify(preset.steps))
     };
 
@@ -237,6 +239,26 @@ window.renderTasks = () => {
                     </div>
                 </div>
 
+                <!-- Observação Global da Meta (Entre o título e o primeiro passo) -->
+                <div class="space-y-1">
+                    ${task.observation ? `
+                        <div class="flex items-start justify-between gap-2 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800 text-xs text-zinc-300">
+                            <div class="flex items-start gap-2 flex-1">
+                                <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
+                                <span>${task.observation}</span>
+                            </div>
+                            <button onclick="editTaskObservation(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition" title="Editar Observação">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+                    <div class="flex justify-end">
+                        <button onclick="editTaskObservation(${tIndex})" class="text-[11px] text-zinc-400 hover:text-indigo-300 flex items-center gap-1 transition">
+                            <i class="fa-solid fa-plus text-[10px]"></i> ${task.observation ? 'Editar Obs' : 'Adicionar Observação'}
+                        </button>
+                    </div>
+                </div>
+
                 <div class="space-y-4">
         `;
 
@@ -250,10 +272,9 @@ window.renderTasks = () => {
                 }
             });
             let stepProg = stepTotal > 0 ? Math.round((stepComp / stepTotal) * 100) : 0;
-            const isCollapsed = step.collapsed || false;
 
             html += `
-                <div class="bg-zinc-950/60 p-4 rounded-lg border border-zinc-800/80 space-y-3 transition-all">
+                <div class="bg-zinc-950/60 p-4 rounded-lg border border-zinc-800/80 space-y-3">
                     <div class="flex justify-between items-center text-xs">
                         <div class="flex items-center gap-1.5 min-w-0 flex-1">
                             <i class="fa-solid fa-angles-right text-indigo-400"></i>
@@ -262,22 +283,15 @@ window.renderTasks = () => {
                                 <i class="fa-solid fa-pen text-[10px]"></i>
                             </button>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center gap-2">
-                                <div class="w-16 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                                    <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${stepProg}%"></div>
-                                </div>
-                                <span class="text-zinc-500 font-mono">${stepProg}%</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${stepProg}%"></div>
                             </div>
-                            <!-- Botão de Minimizar Passo -->
-                            <button onclick="toggleStepCollapse(${tIndex}, ${sIndex})" class="text-zinc-400 hover:text-zinc-200 p-1 transition" title="Minimizar/Expandir Passo">
-                                <i class="fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs"></i>
-                            </button>
+                            <span class="text-zinc-500 font-mono">${stepProg}%</span>
                         </div>
                     </div>
 
-                    <div class="space-y-3 ${isCollapsed ? 'hidden' : ''}">
-                        <div class="space-y-3">
+                    <div class="space-y-3">
             `;
 
             step.requirements.forEach((req, rIndex) => {
@@ -286,13 +300,7 @@ window.renderTasks = () => {
                     <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800 space-y-2">
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                <!-- Checkbox Customizado Moderno -->
-                                <label class="relative flex items-center cursor-pointer select-none">
-                                    <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="peer sr-only">
-                                    <div class="w-5 h-5 bg-zinc-950 border border-zinc-700 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center shadow-inner">
-                                        <i class="fa-solid fa-check text-[10px] text-white scale-0 peer-checked:scale-100 transition-transform"></i>
-                                    </div>
-                                </label>
+                                <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
                                 <span class="text-xs font-medium truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
                                 <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Requisito">
                                     <i class="fa-solid fa-pen text-[10px]"></i>
@@ -308,6 +316,21 @@ window.renderTasks = () => {
                                 <button onclick="deleteReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-xs"></i></button>
                             </div>
                         </div>
+
+                        <!-- Observação do Requisito Principal -->
+                        <div class="space-y-1">
+                            ${req.observation ? `
+                                <div class="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800/80 text-[11px] text-zinc-400">
+                                    <span>💡 ${req.observation}</span>
+                                    <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-0.5 transition"><i class="fa-solid fa-pen text-[9px]"></i></button>
+                                </div>
+                            ` : ''}
+                            <div class="flex justify-end">
+                                <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-[10px] text-zinc-500 hover:text-indigo-400 flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-plus text-[9px]"></i> ${req.observation ? 'Editar Obs' : 'Obs'}
+                                </button>
+                            </div>
+                        </div>
                 `;
 
                 // Renderizar Sub-Requisitos (Itens necessários)
@@ -318,27 +341,31 @@ window.renderTasks = () => {
                     req.subRequirements.forEach((sub, subIndex) => {
                         const subDone = sub.current >= sub.max;
                         html += `
-                            <div class="flex items-center justify-between bg-zinc-950/80 p-2 rounded border border-zinc-800/50 gap-2">
-                                <div class="flex items-center gap-2 min-w-0 flex-1">
-                                    <!-- Checkbox Customizado para Subitem -->
-                                    <label class="relative flex items-center cursor-pointer select-none">
-                                        <input type="checkbox" ${subDone ? 'checked' : ''} onchange="toggleSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="peer sr-only">
-                                        <div class="w-4 h-4 bg-zinc-900 border border-zinc-700 rounded peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center">
-                                            <i class="fa-solid fa-check text-[9px] text-white scale-0 peer-checked:scale-100 transition-transform"></i>
-                                        </div>
-                                    </label>
-                                    <span class="text-[11px] truncate ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
-                                    <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-0.5 transition" title="Editar Subitem">
-                                        <i class="fa-solid fa-pen text-[9px]"></i>
-                                    </button>
-                                    ${sub.isDaily ? '<span class="text-[8px] bg-emerald-950 text-emerald-400 px-1 py-0.2 rounded">DAILY</span>' : ''}
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="flex items-center gap-1 font-mono text-[11px]">
-                                        <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
-                                        <span class="text-zinc-500">/ ${sub.max}</span>
+                            <div class="flex flex-col bg-zinc-950/80 p-2 rounded border border-zinc-800/50 gap-1.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                                        <input type="checkbox" ${subDone ? 'checked' : ''} onchange="toggleSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
+                                        <span class="text-[11px] truncate ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
+                                        <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-0.5 transition" title="Editar Subitem">
+                                            <i class="fa-solid fa-pen text-[9px]"></i>
+                                        </button>
+                                        ${sub.isDaily ? '<span class="text-[8px] bg-emerald-950 text-emerald-400 px-1 py-0.2 rounded">DAILY</span>' : ''}
                                     </div>
-                                    <button onclick="deleteSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-red-400 p-0.5 transition"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-1 font-mono text-[11px]">
+                                            <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                            <span class="text-zinc-500">/ ${sub.max}</span>
+                                        </div>
+                                        <button onclick="deleteSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-red-400 p-0.5 transition"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                                    </div>
+                                </div>
+
+                                <!-- Observação do Subitem -->
+                                <div class="flex items-center justify-between text-[10px] text-zinc-400 pl-6">
+                                    <span>${sub.observation ? '💡 ' + sub.observation : ''}</span>
+                                    <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 transition flex items-center gap-1">
+                                        <i class="fa-solid fa-plus text-[8px]"></i> ${sub.observation ? 'Editar Obs' : 'Obs'}
+                                    </button>
                                 </div>
                             </div>
                         `;
@@ -346,53 +373,35 @@ window.renderTasks = () => {
                     html += `</div>`;
                 }
 
-                // Formulário Minimalista de Adicionar Subitem (Expandível por Ícone)
+                // Formulário para adicionar novo subitem ao requisito principal
                 html += `
-                        <div class="pt-2 flex items-center justify-end">
-                            <div id="sub-form-container-${tIndex}-${sIndex}-${rIndex}" class="hidden flex gap-2 items-center w-full bg-zinc-950 p-2 rounded border border-zinc-800 animate-fadeIn">
-                                <input type="text" id="new-sub-req-${tIndex}-${sIndex}-${rIndex}" placeholder="Nome do item necessário..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-indigo-500">
-                                <input type="number" id="new-sub-max-${tIndex}-${sIndex}-${rIndex}" placeholder="Qtd" value="1" min="1" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1 py-1 text-[11px] text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
-                                <button onclick="addSubReq(${tIndex}, ${sIndex}, ${rIndex})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] px-3 py-1 rounded transition">Salvar</button>
-                            </div>
-                            <button id="sub-btn-${tIndex}-${sIndex}-${rIndex}" onclick="toggleSubForm(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-400 hover:text-indigo-400 text-xs px-2 py-1 rounded flex items-center gap-1 transition" title="Adicionar Item">
-                                <i class="fa-solid fa-plus text-[10px]"></i> Adicionar item
-                            </button>
+                        <div class="pt-2 flex gap-2 items-center">
+                            <input type="text" id="new-sub-req-${tIndex}-${sIndex}-${rIndex}" placeholder="Adicionar item necessário..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-indigo-500">
+                            <input type="number" id="new-sub-max-${tIndex}-${sIndex}-${rIndex}" placeholder="Qtd" value="1" min="1" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-1 text-[11px] text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
+                            <button onclick="addSubReq(${tIndex}, ${sIndex}, ${rIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] px-2.5 py-1 rounded transition">+ Item</button>
                         </div>
                     </div>
                 `;
             });
 
             html += `
-                        </div>
-                        <!-- Formulário Principal de Requisito (Minimalista com Ícone) -->
-                        <div class="pt-2 border-t border-zinc-900 flex flex-col gap-2">
-                            <div id="req-form-container-${tIndex}-${sIndex}" class="hidden flex gap-2 items-center bg-zinc-900 p-2.5 rounded-lg border border-zinc-800 animate-fadeIn">
-                                <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
-                                <input type="number" id="new-max-${tIndex}-${sIndex}" placeholder="Qtd" value="1" min="1" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
-                                <label class="flex items-center gap-1 text-[10px] text-zinc-400 cursor-pointer select-none">
-                                    <input type="checkbox" id="new-daily-${tIndex}-${sIndex}" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600"> Diário
-                                </label>
-                                <button onclick="addReq(${tIndex}, ${sIndex})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded transition">Adicionar</button>
-                            </div>
-                            <button id="req-btn-${tIndex}-${sIndex}" onclick="toggleReqForm(${tIndex}, ${sIndex})" class="w-full py-1.5 border border-dashed border-zinc-800 hover:border-indigo-500/50 text-zinc-400 hover:text-indigo-300 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
-                                <i class="fa-solid fa-plus text-xs"></i> Adicionar Requisito
-                            </button>
-                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-zinc-900 flex gap-2 items-center">
+                        <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito principal..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
+                        <input type="number" id="new-max-${tIndex}-${sIndex}" placeholder="Qtd" value="1" min="1" class="w-18 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
+                        <label class="flex items-center gap-1 text-[10px] text-zinc-400 cursor-pointer">
+                            <input type="checkbox" id="new-daily-${tIndex}-${sIndex}" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600"> Diário?
+                        </label>
+                        <button onclick="addReq(${tIndex}, ${sIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-3 py-1 rounded transition">Adicionar</button>
                     </div>
                 </div>
             `;
         });
 
-        // Formulário Minimalista para Adicionar Novo Passo
         html += `
-                    <div class="pt-2">
-                        <div id="step-form-container-${tIndex}" class="hidden flex gap-2 items-center bg-zinc-950 p-3 rounded-lg border border-zinc-800 mb-2 animate-fadeIn">
-                            <input type="text" id="new-step-${tIndex}" placeholder="Nome do novo passo..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
-                            <button onclick="addStep(${tIndex})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3.5 py-1.5 rounded transition">Salvar Passo</button>
-                        </div>
-                        <button id="step-btn-${tIndex}" onclick="toggleStepForm(${tIndex})" class="w-full py-2 bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-lg border border-zinc-800 text-xs flex items-center justify-center gap-1.5 transition">
-                            <i class="fa-solid fa-plus text-xs"></i> Adicionar Passo
-                        </button>
+                    <div class="flex gap-2 pt-2">
+                        <input type="text" id="new-step-${tIndex}" placeholder="Novo passo (ex: Passo ${task.steps.length + 1})..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
+                        <button onclick="addStep(${tIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700 transition">+ Passo</button>
                     </div>
                 </div>
             </div>
@@ -403,40 +412,36 @@ window.renderTasks = () => {
     updateStats();
 };
 
-// Funções de Toggle para Minimizar e Abrir Formulários Limpos
-window.toggleStepCollapse = (tIndex, sIndex) => {
-    if (tasks[tIndex].steps[sIndex].collapsed === undefined) {
-        tasks[tIndex].steps[sIndex].collapsed = true;
-    } else {
-        tasks[tIndex].steps[sIndex].collapsed = !tasks[tIndex].steps[sIndex].collapsed;
-    }
-    renderTasks();
-};
-
-window.toggleStepForm = (tIndex) => {
-    const form = document.getElementById(`step-form-container-${tIndex}`);
-    const btn = document.getElementById(`step-btn-${tIndex}`);
-    if (form) {
-        form.classList.toggle('hidden');
-        btn.classList.toggle('hidden');
+// Funções de Gerenciamento de Observações
+window.editTaskObservation = (tIndex) => {
+    const current = tasks[tIndex].observation || "";
+    const newObs = prompt("Digite a observação geral para esta meta:", current);
+    if (newObs !== null) {
+        tasks[tIndex].observation = newObs.trim();
+        saveTasksToStorage();
+        renderTasks();
     }
 };
 
-window.toggleReqForm = (tIndex, sIndex) => {
-    const form = document.getElementById(`req-form-container-${tIndex}-${sIndex}`);
-    const btn = document.getElementById(`req-btn-${tIndex}-${sIndex}`);
-    if (form) {
-        form.classList.toggle('hidden');
-        btn.classList.toggle('hidden');
+window.editReqObservation = (tIndex, sIndex, rIndex) => {
+    const req = tasks[tIndex].steps[sIndex].requirements[rIndex];
+    const current = req.observation || "";
+    const newObs = prompt("Digite a observação para este requisito:", current);
+    if (newObs !== null) {
+        req.observation = newObs.trim();
+        saveTasksToStorage();
+        renderTasks();
     }
 };
 
-window.toggleSubForm = (tIndex, sIndex, rIndex) => {
-    const form = document.getElementById(`sub-form-container-${tIndex}-${sIndex}-${rIndex}`);
-    const btn = document.getElementById(`sub-btn-${tIndex}-${sIndex}-${rIndex}`);
-    if (form) {
-        form.classList.toggle('hidden');
-        btn.classList.toggle('hidden');
+window.editSubObservation = (tIndex, sIndex, rIndex, subIndex) => {
+    const sub = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex];
+    const current = sub.observation || "";
+    const newObs = prompt("Digite a observação para este subitem:", current);
+    if (newObs !== null) {
+        sub.observation = newObs.trim();
+        saveTasksToStorage();
+        renderTasks();
     }
 };
 
@@ -530,6 +535,7 @@ window.addReq = (tIndex, sIndex) => {
         current: 0,
         max,
         isDaily,
+        observation: "",
         subRequirements: []
     });
 
@@ -577,7 +583,8 @@ window.addSubReq = (tIndex, sIndex, rIndex) => {
         name,
         current: 0,
         max,
-        isDaily: false
+        isDaily: false,
+        observation: ""
     });
 
     saveTasksToStorage();
