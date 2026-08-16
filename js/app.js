@@ -254,9 +254,13 @@ window.renderTasks = () => {
             html += `
                 <div class="bg-zinc-950/60 p-4 rounded-lg border border-zinc-800/80 space-y-3">
                     <div class="flex justify-between items-center text-xs">
-                        <span class="font-semibold text-zinc-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-angles-right text-indigo-400"></i> ${step.title}
-                        </span>
+                        <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                            <i class="fa-solid fa-angles-right text-indigo-400"></i>
+                            <span class="font-semibold text-zinc-300 truncate">${step.title}</span>
+                            <button onclick="editStepTitle(${tIndex}, ${sIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Passo">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                        </div>
                         <div class="flex items-center gap-2">
                             <div class="w-16 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                                 <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${stepProg}%"></div>
@@ -367,6 +371,16 @@ window.editTaskTitle = (tIndex) => {
     const newTitle = prompt("Editar nome da meta:", current);
     if (newTitle !== null && newTitle.trim() !== "") {
         tasks[tIndex].title = newTitle.trim();
+        saveTasksToStorage();
+        renderTasks();
+    }
+};
+
+window.editStepTitle = (tIndex, sIndex) => {
+    const current = tasks[tIndex].steps[sIndex].title;
+    const newTitle = prompt("Editar nome do passo:", current);
+    if (newTitle !== null && newTitle.trim() !== "") {
+        tasks[tIndex].steps[sIndex].title = newTitle.trim();
         saveTasksToStorage();
         renderTasks();
     }
