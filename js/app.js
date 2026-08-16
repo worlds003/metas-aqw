@@ -219,10 +219,18 @@ window.renderTasks = () => {
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="text-base font-bold text-white">${task.title}</h3>
-                            <span class="text-xs px-2 py-0.5 rounded-full font-mono ${taskProgress === 100 ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-indigo-950 text-indigo-400 border border-indigo-900/50'}">${taskProgress}%</span>
+                            <button onclick="editTaskTitle(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition" title="Editar Nome da Meta">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-24 bg-zinc-800 rounded-full h-2 overflow-hidden">
+                                <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${taskProgress}%"></div>
+                            </div>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-mono ${taskProgress === 100 ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-indigo-950 text-indigo-400 border border-indigo-900/50'}">${taskProgress}%</span>
+                        </div>
                         <button onclick="deleteTask(${tIndex})" class="text-zinc-500 hover:text-red-400 p-1.5 transition" title="Excluir Meta">
                             <i class="fa-solid fa-trash text-xs"></i>
                         </button>
@@ -249,7 +257,12 @@ window.renderTasks = () => {
                         <span class="font-semibold text-zinc-300 flex items-center gap-1.5">
                             <i class="fa-solid fa-angles-right text-indigo-400"></i> ${step.title}
                         </span>
-                        <span class="text-zinc-500 font-mono">${stepProg}%</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${stepProg}%"></div>
+                            </div>
+                            <span class="text-zinc-500 font-mono">${stepProg}%</span>
+                        </div>
                     </div>
 
                     <div class="space-y-3">
@@ -263,14 +276,17 @@ window.renderTasks = () => {
                             <div class="flex items-center gap-2.5 min-w-0 flex-1">
                                 <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
                                 <span class="text-xs font-medium truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
+                                <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Requisito">
+                                    <i class="fa-solid fa-pen text-[10px]"></i>
+                                </button>
                                 ${req.isDaily ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-1.5 py-0.5 rounded font-medium">DAILY</span>' : ''}
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="flex items-center gap-1 font-mono text-xs">
-                                    <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-0.5 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                    <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
                                     <span class="text-zinc-500">/ ${req.max}</span>
                                 </div>
-                                <button onclick="setMaxReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition">Max</button>
+                                <button onclick="setMaxReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2.5 py-1 rounded transition">Max</button>
                                 <button onclick="deleteReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-xs"></i></button>
                             </div>
                         </div>
@@ -288,11 +304,14 @@ window.renderTasks = () => {
                                 <div class="flex items-center gap-2 min-w-0 flex-1">
                                     <input type="checkbox" ${subDone ? 'checked' : ''} onchange="toggleSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600 focus:ring-0 cursor-pointer">
                                     <span class="text-[11px] truncate ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
+                                    <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-0.5 transition" title="Editar Subitem">
+                                        <i class="fa-solid fa-pen text-[9px]"></i>
+                                    </button>
                                     ${sub.isDaily ? '<span class="text-[8px] bg-emerald-950 text-emerald-400 px-1 py-0.2 rounded">DAILY</span>' : ''}
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="flex items-center gap-1 font-mono text-[11px]">
-                                        <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-12 bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                        <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-14 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
                                         <span class="text-zinc-500">/ ${sub.max}</span>
                                     </div>
                                     <button onclick="deleteSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-red-400 p-0.5 transition"><i class="fa-solid fa-xmark text-[10px]"></i></button>
@@ -307,7 +326,7 @@ window.renderTasks = () => {
                 html += `
                         <div class="pt-2 flex gap-2 items-center">
                             <input type="text" id="new-sub-req-${tIndex}-${sIndex}-${rIndex}" placeholder="Adicionar item necessário..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 focus:outline-none focus:border-indigo-500">
-                            <input type="number" id="new-sub-max-${tIndex}-${sIndex}-${rIndex}" placeholder="Qtd" value="1" min="1" class="w-14 bg-zinc-950 border border-zinc-800 rounded px-1 py-1 text-[11px] text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
+                            <input type="number" id="new-sub-max-${tIndex}-${sIndex}-${rIndex}" placeholder="Qtd" value="1" min="1" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-1.5 py-1 text-[11px] text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
                             <button onclick="addSubReq(${tIndex}, ${sIndex}, ${rIndex})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] px-2.5 py-1 rounded transition">+ Item</button>
                         </div>
                     </div>
@@ -318,7 +337,7 @@ window.renderTasks = () => {
                     </div>
                     <div class="pt-2 border-t border-zinc-900 flex gap-2 items-center">
                         <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito principal..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
-                        <input type="number" id="new-max-${tIndex}-${sIndex}" placeholder="Qtd" value="1" min="1" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
+                        <input type="number" id="new-max-${tIndex}-${sIndex}" placeholder="Qtd" value="1" min="1" class="w-18 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 text-center focus:outline-none focus:border-indigo-500">
                         <label class="flex items-center gap-1 text-[10px] text-zinc-400 cursor-pointer">
                             <input type="checkbox" id="new-daily-${tIndex}-${sIndex}" class="rounded bg-zinc-900 border-zinc-700 text-indigo-600"> Diário?
                         </label>
@@ -340,6 +359,37 @@ window.renderTasks = () => {
 
     container.innerHTML = html;
     updateStats();
+};
+
+// Funções de Edição de Nomes
+window.editTaskTitle = (tIndex) => {
+    const current = tasks[tIndex].title;
+    const newTitle = prompt("Editar nome da meta:", current);
+    if (newTitle !== null && newTitle.trim() !== "") {
+        tasks[tIndex].title = newTitle.trim();
+        saveTasksToStorage();
+        renderTasks();
+    }
+};
+
+window.editReqName = (tIndex, sIndex, rIndex) => {
+    const current = tasks[tIndex].steps[sIndex].requirements[rIndex].name;
+    const newName = prompt("Editar nome do requisito:", current);
+    if (newName !== null && newName.trim() !== "") {
+        tasks[tIndex].steps[sIndex].requirements[rIndex].name = newName.trim();
+        saveTasksToStorage();
+        renderTasks();
+    }
+};
+
+window.editSubReqName = (tIndex, sIndex, rIndex, subIndex) => {
+    const current = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex].name;
+    const newName = prompt("Editar nome do item necessário:", current);
+    if (newName !== null && newName.trim() !== "") {
+        tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex].name = newName.trim();
+        saveTasksToStorage();
+        renderTasks();
+    }
 };
 
 window.toggleReq = (tIndex, sIndex, rIndex) => {
