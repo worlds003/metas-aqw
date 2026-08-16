@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('app-container').classList.remove('hidden');
     document.getElementById('user-email-display').innerText = 'Modo Local / Convidado';
 
-    // Injeta o CSS do efeito de água na barra de progresso e animações de setas
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes waterFlow {
@@ -116,6 +115,13 @@ function setupEventListeners() {
             input.value = '';
         });
     }
+
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            renderTasks();
+        });
+    }
 }
 
 window.loadPreset = (key) => {
@@ -130,7 +136,6 @@ window.loadPreset = (key) => {
         steps: JSON.parse(JSON.stringify(preset.steps))
     };
 
-    // Garante propriedade collapsed nos presets caso não venham definidos
     newTask.steps.forEach(s => { if (s.collapsed === undefined) s.collapsed = false; });
 
     tasks.push(newTask);
@@ -269,7 +274,6 @@ window.renderTasks = () => {
                 </div>
 
                 <div class="space-y-5 ${isTaskCollapsed ? 'hidden' : ''}">
-                    <!-- Observação Global da Meta -->
                     <div class="space-y-2 mt-2 mb-4">
                         ${task.observation ? `
                             <div class="flex items-start justify-between gap-3 bg-zinc-950/80 p-3.5 rounded-lg border border-zinc-800 text-sm text-zinc-300 shadow-inner">
@@ -340,7 +344,6 @@ window.renderTasks = () => {
                     <div class="bg-zinc-900 p-3.5 rounded-lg border border-zinc-800 shadow-sm">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-start gap-3 min-w-0 flex-1">
-                                <!-- Checkbox -->
                                 <label class="relative flex items-center cursor-pointer select-none mt-1">
                                     <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="peer sr-only">
                                     <div class="w-6 h-6 bg-zinc-950 border border-zinc-700 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center shadow-inner">
@@ -354,7 +357,6 @@ window.renderTasks = () => {
                                         <i class="fa-solid fa-pen text-xs"></i>
                                     </button>
 
-                                    <!-- Observação Inline -->
                                     ${req.observation ? `
                                         <div class="flex items-start gap-2 bg-zinc-950 px-3 py-1.5 rounded-md border border-zinc-800 text-xs text-zinc-300 mx-1 max-w-[200px] xl:max-w-[350px]">
                                             <span class="whitespace-pre-wrap break-words flex-1">${req.observation}</span>
@@ -374,7 +376,7 @@ window.renderTasks = () => {
                                 ` : ''}
                                 
                                 <div class="flex items-center gap-1.5 font-mono text-sm">
-                                    <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                    <input type="number" value="${req.current}" oninput="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
                                     <span class="text-zinc-500">/ ${req.max}</span>
                                 </div>
                                 <button onclick="setMaxReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded transition font-medium">Max</button>
@@ -425,7 +427,7 @@ window.renderTasks = () => {
                                         ` : ''}
 
                                         <div class="flex items-center gap-1.5 font-mono text-sm">
-                                            <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
+                                            <input type="number" value="${sub.current}" oninput="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
                                             <span class="text-zinc-500">/ ${sub.max}</span>
                                         </div>
                                         <button onclick="deleteSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-sm"></i></button>
@@ -656,7 +658,6 @@ window.updateReqValue = (tIndex, sIndex, rIndex, val) => {
     if (!isNaN(num)) {
         tasks[tIndex].steps[sIndex].requirements[rIndex].current = Math.max(0, Math.min(num, tasks[tIndex].steps[sIndex].requirements[rIndex].max));
         saveTasksToStorage();
-        renderTasks();
     }
 };
 
@@ -710,7 +711,6 @@ window.updateSubReqValue = (tIndex, sIndex, rIndex, subIndex, val) => {
         const sub = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex];
         sub.current = Math.max(0, Math.min(num, sub.max));
         saveTasksToStorage();
-        renderTasks();
     }
 };
 
