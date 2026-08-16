@@ -8,6 +8,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('app-container').classList.remove('hidden');
     document.getElementById('user-email-display').innerText = 'Modo Local / Convidado';
 
+    // Injeta o CSS do efeito de água na barra de progresso
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes waterFlow {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-water-flow {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4, #4f46e5, #3b82f6);
+            background-size: 200% auto;
+            animation: waterFlow 2.5s linear infinite;
+        }
+    `;
+    document.head.appendChild(style);
+
     loadTasksFromStorage();
     initTimer();
     setupEventListeners();
@@ -228,8 +243,8 @@ window.renderTasks = () => {
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-32 bg-zinc-800 rounded-full h-2.5 overflow-hidden">
-                                <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${taskProgress}%"></div>
+                            <div class="w-48 sm:w-64 bg-zinc-800 rounded-full h-3 overflow-hidden shadow-inner border border-zinc-700/50">
+                                <div class="h-full transition-all duration-300 ${taskProgress > 0 ? 'animate-water-flow' : ''}" style="width: ${taskProgress}%"></div>
                             </div>
                             <span class="text-sm px-2.5 py-0.5 rounded-full font-mono ${taskProgress === 100 ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-indigo-950 text-indigo-400 border border-indigo-900/50'}">${taskProgress}%</span>
                         </div>
@@ -245,7 +260,7 @@ window.renderTasks = () => {
                         <div class="flex items-start justify-between gap-3 bg-zinc-950/80 p-3.5 rounded-lg border border-zinc-800 text-sm text-zinc-300 shadow-inner">
                             <div class="flex items-start gap-3 flex-1">
                                 <i class="fa-solid fa-circle-info text-indigo-400 mt-1"></i>
-                                <span>${task.observation}</span>
+                                <span class="whitespace-pre-wrap">${task.observation}</span>
                             </div>
                             <button onclick="editTaskObservation(${tIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition" title="Editar Observação">
                                 <i class="fa-solid fa-pen text-sm"></i>
@@ -286,8 +301,8 @@ window.renderTasks = () => {
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="flex items-center gap-2.5">
-                                <div class="w-20 bg-zinc-800 rounded-full h-2 overflow-hidden">
-                                    <div class="bg-indigo-500 h-full transition-all duration-300" style="width: ${stepProg}%"></div>
+                                <div class="w-28 sm:w-40 bg-zinc-800 rounded-full h-2.5 overflow-hidden shadow-inner border border-zinc-700/50">
+                                    <div class="h-full transition-all duration-300 ${stepProg > 0 ? 'animate-water-flow' : ''}" style="width: ${stepProg}%"></div>
                                 </div>
                                 <span class="text-zinc-500 font-mono text-sm">${stepProg}%</span>
                             </div>
@@ -304,36 +319,37 @@ window.renderTasks = () => {
             step.requirements.forEach((req, rIndex) => {
                 const isDone = req.current >= req.max;
                 
-                // Div principal do Requisito (sem espaço de observação em baixo)
                 html += `
                     <div class="bg-zinc-900 p-3.5 rounded-lg border border-zinc-800 shadow-sm">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3 min-w-0 flex-1">
                                 <!-- Checkbox -->
-                                <label class="relative flex items-center cursor-pointer select-none">
+                                <label class="relative flex items-center cursor-pointer select-none mt-1">
                                     <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="peer sr-only">
                                     <div class="w-6 h-6 bg-zinc-950 border border-zinc-700 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center shadow-inner">
                                         <i class="fa-solid fa-check text-xs text-white scale-0 peer-checked:scale-100 transition-transform"></i>
                                     </div>
                                 </label>
                                 
-                                <span class="text-sm font-medium truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
-                                <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Requisito">
-                                    <i class="fa-solid fa-pen text-xs"></i>
-                                </button>
+                                <div class="flex flex-wrap items-center gap-1.5 pt-1 flex-1">
+                                    <span class="text-sm font-medium ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
+                                    <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Requisito">
+                                        <i class="fa-solid fa-pen text-xs"></i>
+                                    </button>
 
-                                <!-- Observação Inline (na frente do lápis) -->
-                                ${req.observation ? `
-                                    <div class="flex items-center gap-2 bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-800 text-xs text-zinc-300 ml-1">
-                                        <span class="truncate max-w-[150px] xl:max-w-[250px]">${req.observation}</span>
-                                        <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-500 hover:text-indigo-400 p-0.5 transition" title="Editar Observação"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                                    </div>
-                                ` : ''}
+                                    <!-- Observação Inline (agora suporta múltiplas linhas) -->
+                                    ${req.observation ? `
+                                        <div class="flex items-start gap-2 bg-zinc-950 px-3 py-1.5 rounded-md border border-zinc-800 text-xs text-zinc-300 mx-1 max-w-[200px] xl:max-w-[350px]">
+                                            <span class="whitespace-pre-wrap break-words flex-1">${req.observation}</span>
+                                            <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-500 hover:text-indigo-400 p-0.5 transition mt-0.5" title="Editar Observação"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                                        </div>
+                                    ` : ''}
 
-                                ${req.isDaily ? '<span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded font-medium ml-1">DAILY</span>' : ''}
+                                    ${req.isDaily ? '<span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded font-medium ml-1">DAILY</span>' : ''}
+                                </div>
                             </div>
                             
-                            <div class="flex items-center gap-3 shrink-0">
+                            <div class="flex items-center gap-3 shrink-0 pt-0.5">
                                 <!-- Botão Add Obs Minimalista (apenas se estiver vazio) -->
                                 ${!req.observation ? `
                                     <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-xs text-zinc-500 hover:text-indigo-300 flex items-center gap-1 transition font-medium mr-1">
@@ -351,7 +367,6 @@ window.renderTasks = () => {
                         </div>
                 `;
 
-                // Renderizar Sub-Requisitos (Itens necessários)
                 if (req.subRequirements && req.subRequirements.length > 0) {
                     html += `<div class="pl-8 pt-3 border-t border-zinc-800/60 space-y-2 mt-3">
                                 <div class="text-[11px] uppercase tracking-wider font-semibold text-indigo-400 mb-1.5">Itens necessários:</div>`;
@@ -360,34 +375,33 @@ window.renderTasks = () => {
                         const subDone = sub.current >= sub.max;
                         html += `
                             <div class="bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800/50">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                        <!-- Checkbox -->
-                                        <label class="relative flex items-center cursor-pointer select-none">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-start gap-2.5 min-w-0 flex-1">
+                                        <label class="relative flex items-center cursor-pointer select-none mt-1">
                                             <input type="checkbox" ${subDone ? 'checked' : ''} onchange="toggleSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="peer sr-only">
                                             <div class="w-5 h-5 bg-zinc-900 border border-zinc-700 rounded peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center">
                                                 <i class="fa-solid fa-check text-[10px] text-white scale-0 peer-checked:scale-100 transition-transform"></i>
                                             </div>
                                         </label>
                                         
-                                        <span class="text-sm truncate ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
-                                        <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Subitem">
-                                            <i class="fa-solid fa-pen text-xs"></i>
-                                        </button>
+                                        <div class="flex flex-wrap items-center gap-1.5 pt-1 flex-1">
+                                            <span class="text-sm ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
+                                            <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Subitem">
+                                                <i class="fa-solid fa-pen text-xs"></i>
+                                            </button>
 
-                                        <!-- Observação Inline do Subitem (na frente do lápis) -->
-                                        ${sub.observation ? `
-                                            <div class="flex items-center gap-2 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 text-xs text-zinc-300 ml-1">
-                                                <span class="truncate max-w-[120px] xl:max-w-[200px]">${sub.observation}</span>
-                                                <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-500 hover:text-indigo-400 p-0.5 transition"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                                            </div>
-                                        ` : ''}
+                                            ${sub.observation ? `
+                                                <div class="flex items-start gap-2 bg-zinc-900 px-2 py-1.5 rounded border border-zinc-800 text-xs text-zinc-300 mx-1 max-w-[180px] xl:max-w-[300px]">
+                                                    <span class="whitespace-pre-wrap break-words flex-1">${sub.observation}</span>
+                                                    <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-500 hover:text-indigo-400 p-0.5 transition mt-0.5"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                                                </div>
+                                            ` : ''}
 
-                                        ${sub.isDaily ? '<span class="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded ml-1">DAILY</span>' : ''}
+                                            ${sub.isDaily ? '<span class="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded ml-1">DAILY</span>' : ''}
+                                        </div>
                                     </div>
                                     
-                                    <div class="flex items-center gap-3 shrink-0">
-                                        <!-- Botão Add Obs Minimalista para subitem -->
+                                    <div class="flex items-center gap-3 shrink-0 pt-0.5">
                                         ${!sub.observation ? `
                                             <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-[11px] text-zinc-500 hover:text-indigo-300 flex items-center gap-1 transition font-medium mr-1">
                                                 <i class="fa-solid fa-plus text-[9px]"></i> Add Obs
@@ -407,7 +421,6 @@ window.renderTasks = () => {
                     html += `</div>`;
                 }
 
-                // Formulário Minimalista de Adicionar Subitem
                 html += `
                         <div class="pt-3 flex items-center justify-end">
                             <div id="sub-form-container-${tIndex}-${sIndex}-${rIndex}" class="hidden flex gap-2 items-center w-full bg-zinc-950 p-2.5 rounded border border-zinc-800 animate-fadeIn">
@@ -425,7 +438,6 @@ window.renderTasks = () => {
 
             html += `
                         </div>
-                        <!-- Formulário Principal de Requisito -->
                         <div class="pt-3 border-t border-zinc-900 flex flex-col gap-3">
                             <div id="req-form-container-${tIndex}-${sIndex}" class="hidden flex gap-3 items-center bg-zinc-900 p-3 rounded-lg border border-zinc-800 animate-fadeIn">
                                 <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500">
@@ -444,7 +456,6 @@ window.renderTasks = () => {
             `;
         });
 
-        // Formulário Minimalista para Adicionar Novo Passo
         html += `
                     <div class="pt-3">
                         <div id="step-form-container-${tIndex}" class="hidden flex gap-3 items-center bg-zinc-950 p-4 rounded-lg border border-zinc-800 mb-3 animate-fadeIn">
@@ -464,7 +475,34 @@ window.renderTasks = () => {
     updateStats();
 };
 
-// Funções de Toggle para Minimizar e Abrir Formulários Limpos
+// --- Função Modal Personalizado para Textos Longos (Permite 'Enter') ---
+window.openMultilineModal = (title, currentValue, onSave) => {
+    const existing = document.getElementById('custom-obs-modal');
+    if (existing) existing.remove();
+
+    const modalHtml = `
+        <div id="custom-obs-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div class="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-md shadow-2xl flex flex-col gap-4">
+                <h3 class="text-white font-semibold text-lg">${title}</h3>
+                <textarea id="modal-textarea" rows="4" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500 resize-y" placeholder="Escreva aqui... Pressione Enter para pular uma linha.">${currentValue}</textarea>
+                <div class="flex justify-end gap-3 mt-2">
+                    <button onclick="document.getElementById('custom-obs-modal').remove()" class="px-4 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition">Cancelar</button>
+                    <button id="modal-save-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition">Salvar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    const textarea = document.getElementById('modal-textarea');
+    textarea.focus();
+    
+    document.getElementById('modal-save-btn').onclick = () => {
+        onSave(textarea.value.trim());
+        document.getElementById('custom-obs-modal').remove();
+    };
+};
+
 window.toggleStepCollapse = (tIndex, sIndex) => {
     if (tasks[tIndex].steps[sIndex].collapsed === undefined) {
         tasks[tIndex].steps[sIndex].collapsed = true;
@@ -501,40 +539,37 @@ window.toggleSubForm = (tIndex, sIndex, rIndex) => {
     }
 };
 
-// Funções de Gerenciamento de Observações
+// Observações utilizando o Modal novo!
 window.editTaskObservation = (tIndex) => {
     const current = tasks[tIndex].observation || "";
-    const newObs = prompt("Digite a observação geral para esta meta:", current);
-    if (newObs !== null) {
-        tasks[tIndex].observation = newObs.trim();
+    window.openMultilineModal("Editar Observação Geral da Meta", current, (newVal) => {
+        tasks[tIndex].observation = newVal;
         saveTasksToStorage();
         renderTasks();
-    }
+    });
 };
 
 window.editReqObservation = (tIndex, sIndex, rIndex) => {
     const req = tasks[tIndex].steps[sIndex].requirements[rIndex];
     const current = req.observation || "";
-    const newObs = prompt("Digite a observação para este requisito:", current);
-    if (newObs !== null) {
-        req.observation = newObs.trim();
+    window.openMultilineModal("Editar Observação do Requisito", current, (newVal) => {
+        req.observation = newVal;
         saveTasksToStorage();
         renderTasks();
-    }
+    });
 };
 
 window.editSubObservation = (tIndex, sIndex, rIndex, subIndex) => {
     const sub = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex];
     const current = sub.observation || "";
-    const newObs = prompt("Digite a observação para este subitem:", current);
-    if (newObs !== null) {
-        sub.observation = newObs.trim();
+    window.openMultilineModal("Editar Observação do Subitem", current, (newVal) => {
+        sub.observation = newVal;
         saveTasksToStorage();
         renderTasks();
-    }
+    });
 };
 
-// Funções de Edição de Nomes
+// Funções de Edição de Nomes mantem o prompt simples
 window.editTaskTitle = (tIndex) => {
     const current = tasks[tIndex].title;
     const newTitle = prompt("Editar nome da meta:", current);
@@ -632,7 +667,6 @@ window.addReq = (tIndex, sIndex) => {
     renderTasks();
 };
 
-// Funções para Sub-Requisitos
 window.toggleSubReq = (tIndex, sIndex, rIndex, subIndex) => {
     const sub = tasks[tIndex].steps[sIndex].requirements[rIndex].subRequirements[subIndex];
     sub.current = (sub.current >= sub.max) ? 0 : sub.max;
