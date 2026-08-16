@@ -37,7 +37,7 @@ export const PRESETS = {
                             { name: "Nulgath Shaped Chocolate", current: 0, max: 1, isDaily: false },
                             { name: "Elders' Blood", current: 0, max: 1, isDaily: true },
                             { name: "Aelita's Emerald", current: 0, max: 1, isDaily: false },
-                            { name: "Unidentified 13", current: 0, max: 1, isDaily: true },
+                            { name: "Unidentified 13", current: 0, max: 1, isDaily: false },
                             { name: "Gem of Nulgath", current: 0, max: 20, isDaily: false },
                             { name: "Emblem of Nulgath", current: 0, max: 20, isDaily: false },
                             { name: "Essence of Nulgath", current: 0, max: 50, isDaily: false },
