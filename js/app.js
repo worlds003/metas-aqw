@@ -291,7 +291,6 @@ window.renderTasks = () => {
                                 </div>
                                 <span class="text-zinc-500 font-mono text-sm">${stepProg}%</span>
                             </div>
-                            <!-- Botão de Minimizar Passo -->
                             <button onclick="toggleStepCollapse(${tIndex}, ${sIndex})" class="text-zinc-400 hover:text-zinc-200 p-1.5 transition" title="Minimizar/Expandir Passo">
                                 <i class="fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-sm"></i>
                             </button>
@@ -304,24 +303,44 @@ window.renderTasks = () => {
 
             step.requirements.forEach((req, rIndex) => {
                 const isDone = req.current >= req.max;
+                
+                // Div principal do Requisito (sem espaço de observação em baixo)
                 html += `
-                    <div class="bg-zinc-900 p-4 rounded-lg border border-zinc-800 space-y-3 shadow-sm">
+                    <div class="bg-zinc-900 p-3.5 rounded-lg border border-zinc-800 shadow-sm">
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-3 min-w-0 flex-1">
-                                <!-- Checkbox Customizado Moderno -->
+                                <!-- Checkbox -->
                                 <label class="relative flex items-center cursor-pointer select-none">
                                     <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReq(${tIndex}, ${sIndex}, ${rIndex})" class="peer sr-only">
                                     <div class="w-6 h-6 bg-zinc-950 border border-zinc-700 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center shadow-inner">
                                         <i class="fa-solid fa-check text-xs text-white scale-0 peer-checked:scale-100 transition-transform"></i>
                                     </div>
                                 </label>
+                                
                                 <span class="text-sm font-medium truncate ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${req.name}</span>
-                                <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1.5 transition" title="Editar Requisito">
+                                <button onclick="editReqName(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Requisito">
                                     <i class="fa-solid fa-pen text-xs"></i>
                                 </button>
-                                ${req.isDaily ? '<span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded font-medium">DAILY</span>' : ''}
+
+                                <!-- Observação Inline (na frente do lápis) -->
+                                ${req.observation ? `
+                                    <div class="flex items-center gap-2 bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-800 text-xs text-zinc-300 ml-1">
+                                        <span class="truncate max-w-[150px] xl:max-w-[250px]">${req.observation}</span>
+                                        <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-500 hover:text-indigo-400 p-0.5 transition" title="Editar Observação"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                                    </div>
+                                ` : ''}
+
+                                ${req.isDaily ? '<span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded font-medium ml-1">DAILY</span>' : ''}
                             </div>
-                            <div class="flex items-center gap-3">
+                            
+                            <div class="flex items-center gap-3 shrink-0">
+                                <!-- Botão Add Obs Minimalista (apenas se estiver vazio) -->
+                                ${!req.observation ? `
+                                    <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-xs text-zinc-500 hover:text-indigo-300 flex items-center gap-1 transition font-medium mr-1">
+                                        <i class="fa-solid fa-plus text-[10px]"></i> Add Obs
+                                    </button>
+                                ` : ''}
+                                
                                 <div class="flex items-center gap-1.5 font-mono text-sm">
                                     <input type="number" value="${req.current}" onchange="updateReqValue(${tIndex}, ${sIndex}, ${rIndex}, this.value)" class="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
                                     <span class="text-zinc-500">/ ${req.max}</span>
@@ -330,48 +349,51 @@ window.renderTasks = () => {
                                 <button onclick="deleteReq(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-600 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-xmark text-sm"></i></button>
                             </div>
                         </div>
-
-                        <!-- Observação do Requisito -->
-                        <div class="space-y-1.5 mt-2">
-                            ${req.observation ? `
-                                <div class="flex items-center justify-between bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-sm text-zinc-300">
-                                    <span class="flex items-center gap-2"><i class="fa-solid fa-lightbulb text-amber-400"></i> ${req.observation}</span>
-                                    <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition"><i class="fa-solid fa-pen text-sm"></i></button>
-                                </div>
-                            ` : ''}
-                            <div class="flex justify-end">
-                                <button onclick="editReqObservation(${tIndex}, ${sIndex}, ${rIndex})" class="text-xs text-zinc-400 hover:text-indigo-300 flex items-center gap-1.5 transition font-medium">
-                                    <i class="fa-solid fa-plus text-xs"></i> ${req.observation ? 'Editar Obs' : 'Add Obs'}
-                                </button>
-                            </div>
-                        </div>
                 `;
 
                 // Renderizar Sub-Requisitos (Itens necessários)
                 if (req.subRequirements && req.subRequirements.length > 0) {
-                    html += `<div class="pl-8 pt-3 border-t border-zinc-800/60 space-y-3 mt-3">
-                                <div class="text-xs uppercase tracking-wider font-semibold text-indigo-400 mb-1.5">Itens necessários:</div>`;
+                    html += `<div class="pl-8 pt-3 border-t border-zinc-800/60 space-y-2 mt-3">
+                                <div class="text-[11px] uppercase tracking-wider font-semibold text-indigo-400 mb-1.5">Itens necessários:</div>`;
                     
                     req.subRequirements.forEach((sub, subIndex) => {
                         const subDone = sub.current >= sub.max;
                         html += `
-                            <div class="flex flex-col gap-2 bg-zinc-950/80 p-3 rounded-lg border border-zinc-800/50">
+                            <div class="bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800/50">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                        <!-- Checkbox Customizado para Subitem -->
+                                        <!-- Checkbox -->
                                         <label class="relative flex items-center cursor-pointer select-none">
                                             <input type="checkbox" ${subDone ? 'checked' : ''} onchange="toggleSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="peer sr-only">
                                             <div class="w-5 h-5 bg-zinc-900 border border-zinc-700 rounded peer-checked:bg-indigo-600 peer-checked:border-indigo-500 transition flex items-center justify-center">
                                                 <i class="fa-solid fa-check text-[10px] text-white scale-0 peer-checked:scale-100 transition-transform"></i>
                                             </div>
                                         </label>
+                                        
                                         <span class="text-sm truncate ${subDone ? 'line-through text-zinc-500' : 'text-zinc-300'}">↳ ${sub.name}</span>
                                         <button onclick="editSubReqName(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-indigo-400 p-1 transition" title="Editar Subitem">
                                             <i class="fa-solid fa-pen text-xs"></i>
                                         </button>
-                                        ${sub.isDaily ? '<span class="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded">DAILY</span>' : ''}
+
+                                        <!-- Observação Inline do Subitem (na frente do lápis) -->
+                                        ${sub.observation ? `
+                                            <div class="flex items-center gap-2 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 text-xs text-zinc-300 ml-1">
+                                                <span class="truncate max-w-[120px] xl:max-w-[200px]">${sub.observation}</span>
+                                                <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-500 hover:text-indigo-400 p-0.5 transition"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                                            </div>
+                                        ` : ''}
+
+                                        ${sub.isDaily ? '<span class="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded ml-1">DAILY</span>' : ''}
                                     </div>
-                                    <div class="flex items-center gap-3">
+                                    
+                                    <div class="flex items-center gap-3 shrink-0">
+                                        <!-- Botão Add Obs Minimalista para subitem -->
+                                        ${!sub.observation ? `
+                                            <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-[11px] text-zinc-500 hover:text-indigo-300 flex items-center gap-1 transition font-medium mr-1">
+                                                <i class="fa-solid fa-plus text-[9px]"></i> Add Obs
+                                            </button>
+                                        ` : ''}
+
                                         <div class="flex items-center gap-1.5 font-mono text-sm">
                                             <input type="number" value="${sub.current}" onchange="updateSubReqValue(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex}, this.value)" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-right text-zinc-200 focus:outline-none focus:border-indigo-500">
                                             <span class="text-zinc-500">/ ${sub.max}</span>
@@ -379,26 +401,13 @@ window.renderTasks = () => {
                                         <button onclick="deleteSubReq(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-600 hover:text-red-400 p-1 transition"><i class="fa-solid fa-xmark text-sm"></i></button>
                                     </div>
                                 </div>
-                                
-                                <!-- Observação do Subitem -->
-                                ${sub.observation ? `
-                                    <div class="flex items-center justify-between text-sm text-zinc-300 bg-zinc-900 p-2.5 rounded border border-zinc-800 ml-7">
-                                        <span>💡 ${sub.observation}</span>
-                                        <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-zinc-500 hover:text-indigo-400 p-1 transition"><i class="fa-solid fa-pen text-xs"></i></button>
-                                    </div>
-                                ` : ''}
-                                <div class="flex justify-end pr-1">
-                                    <button onclick="editSubObservation(${tIndex}, ${sIndex}, ${rIndex}, ${subIndex})" class="text-xs text-zinc-400 hover:text-indigo-300 flex items-center gap-1.5 transition">
-                                        <i class="fa-solid fa-plus text-xs"></i> ${sub.observation ? 'Editar Obs' : 'Add Obs'}
-                                    </button>
-                                </div>
                             </div>
                         `;
                     });
                     html += `</div>`;
                 }
 
-                // Formulário Minimalista de Adicionar Subitem (Expandível por Ícone)
+                // Formulário Minimalista de Adicionar Subitem
                 html += `
                         <div class="pt-3 flex items-center justify-end">
                             <div id="sub-form-container-${tIndex}-${sIndex}-${rIndex}" class="hidden flex gap-2 items-center w-full bg-zinc-950 p-2.5 rounded border border-zinc-800 animate-fadeIn">
@@ -416,7 +425,7 @@ window.renderTasks = () => {
 
             html += `
                         </div>
-                        <!-- Formulário Principal de Requisito (Minimalista com Ícone) -->
+                        <!-- Formulário Principal de Requisito -->
                         <div class="pt-3 border-t border-zinc-900 flex flex-col gap-3">
                             <div id="req-form-container-${tIndex}-${sIndex}" class="hidden flex gap-3 items-center bg-zinc-900 p-3 rounded-lg border border-zinc-800 animate-fadeIn">
                                 <input type="text" id="new-req-${tIndex}-${sIndex}" placeholder="Nome do requisito..." class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500">
